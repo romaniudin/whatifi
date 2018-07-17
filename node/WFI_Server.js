@@ -93,7 +93,6 @@ const saveUser = (json,response) => {
 app.post("/user", (request,response) => {
 
 	response.header("Access-Control-Allow-Origin","*");
-	var json = response.body;
 	console.log("recieved user json upload");
 
 	var body = [];
