@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="WhatIfI_v1.1.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+</head>
+<body >
+
+<div id="mainContent">
+
+    <h1>WhatIfI user info retrieval</h1>
+
+    <h3>Input your username:</h3>
+    <input type="text" name="usernameTextEntry" id="usernameTextEntry" value="">
+    <br>
+    <h3>Input end date</h3>
+    <input type="text" name="endDateTextEntry" id="endDateTextEntry" value="">
+    <input id="clickMe" type="button" value="Retrieve Info" onclick="fetchIncomeData();" />
+    <br>
+    <p>Your username</p>
+    <span id="username"></span>
+    <br>
+    <p>Your first income</p>
+    <span id="income1"></span>
+    <br>
+    <p>Your second income</p>
+    <span id="income2"></span>
+    <br>
+    <p>Your total value</p>
+    <span id="totalIncome"></span>
+
+</div>
+
+</body>
+</html>
