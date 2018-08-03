@@ -66,7 +66,7 @@ const saveUser = (json,response) => {
 		MongoClient.connect("mongodb://127.0.0.1:27017",function(err,mongo){
 			if (err == null)
 			{
-				var query = mongo.db("whatifi").collection("users").insert(json, function(err,doc) {
+				var query = mongo.db("whatifi").collection("users").update({"username":json["username"],"email":json["email"]},json,{upsert:true},function(err,doc) {
 
 					if (err == null)
 					{
