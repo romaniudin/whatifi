@@ -1,6 +1,8 @@
 const express = require("express");
 const app = express();
 const MongoClient = require("mongodb").MongoClient;
+const {setCorsHeaders,verifyLogin,loginRequest,createAccountRequest} = require("./api");
+const bodyParser = require("body-parser");
 
 app.get("/user/:id", (request,response) => {
 
@@ -113,5 +115,12 @@ app.post("/user", (request,response) => {
 
 
 });	
+
+app.use("/createAccount", setCorsHeaders);
+app.use("/createAccount", bodyParser.json());
+app.post("/createAccount", createAccountRequest);
+
+app.use("/login", setCorsHeaders);
+app.get("/login", verifyLogin(),loginRequest);
 
 app.listen(8080, () => console.log("listening to port 8080"));

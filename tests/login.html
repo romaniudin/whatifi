@@ -1,0 +1,36 @@
+<html>
+    <body>
+        <script type="text/javascript">
+            const submit = () => {
+                document.getElementById("result").innerHTML = "";
+
+                const username = document.getElementById("username").value;
+                const password = document.getElementById("password").value;
+
+                const request = new XMLHttpRequest();
+                request.onreadystatechange = () => {
+                    if (request.readyState == 4)
+                    {
+                        if (request.status == 200)
+                        {
+                            document.getElementById("result").innerHTML = "Successfully logged into account: "+username+" | API token: "+request.responseText;
+                        }
+                        else
+                        {
+                            document.getElementById("result").innerHTML = "Failed to log into account: "+username;
+                        }
+                    }
+                }
+                request.open("get","http://ec2-54-70-113-113.us-west-2.compute.amazonaws.com:8080/login");
+                request.setRequestHeader("Authorization","Basic "+btoa(username+":"+password));
+                request.send();
+            }
+
+        </script>
+        <div><span>username</span><input type="text" id="username"></div>
+        <div><span>password</span><input type="password" id="password"></div>
+        <div><button onClick="submit()">Submit</button></div>
+        <div id="result"></div>
+    </body>
+</html>
+
