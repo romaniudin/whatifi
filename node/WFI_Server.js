@@ -61,14 +61,14 @@ const isValidUserUpload = json => {
 	return "username" in json && "email" in json && json["username"] != "" && json["email"] != "";
 }
 
-const saveUser = (json,response) => {
+const updateUserData = (json,response) => {
 
 	if (isValidUserUpload(json))
 	{
 		MongoClient.connect("mongodb://127.0.0.1:27017",function(err,mongo){
 			if (err == null)
 			{
-				var query = mongo.db("whatifi").collection("users").update({"username":json["username"],"email":json["email"]},json,{upsert:true},function(err,doc) {
+				var query = mongo.db("whatifi").collection("users").update({"username":json["username"],"email":json["email"]},json,{upsert:false},function(err,doc) {
 
 					if (err == null)
 					{
@@ -92,7 +92,7 @@ const saveUser = (json,response) => {
 	}
 }
 
-app.post("/user", (request,response) => {
+app.post("/updateUserData", (request,response) => {
 
 	response.header("Access-Control-Allow-Origin","*");
 	console.log("recieved user json upload");
@@ -104,8 +104,8 @@ app.post("/user", (request,response) => {
 
 	}).on('end', function() {
 		try {
-			var user = JSON.parse(body.toString());
-			saveUser(user,response);
+			var userData = JSON.parse(body.toString());
+			updateUserData(userData,response);
 		}
 		catch (e) {
 			response.statusCode = 400;
