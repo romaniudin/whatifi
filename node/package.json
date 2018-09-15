@@ -2,7 +2,7 @@
   "name": "whatifi-server",
   "version": "1.0.0",
   "description": "WhatIfI API Server",
-  "main": "WFI_Server.js",
+  "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -11,11 +11,13 @@
   "dependencies": {
     "bcrypt": "^3.0.0",
     "body-parser": "^1.18.3",
+    "email-validator": "^2.0.4",
     "express": "^4.16.3",
     "jsonwebtoken": "^8.3.0",
     "mongodb": "^3.1.4",
     "nodemon": "^1.18.4",
     "passport": "^0.4.0",
-    "passport-http": "^0.3.0"
+    "passport-http": "^0.3.0",
+    "password-validator": "^4.1.1"
   }
 }
