@@ -54,9 +54,8 @@ const itemVerification =
 }
 const validItemTypes = Object.keys(itemVerification);
 
-const getItems = async (query) =>
+const getItems = async (account,query) =>
 {
-    const account = query.account;
     const type = query.type;
 
     if (type && type != "all" && itemVerification[type] == null)
@@ -99,7 +98,7 @@ const getItems = async (query) =>
     return allItems;
 }
 
-const saveItem = async (item,account) =>
+const saveItem = async (item,account,update) =>
 {
     try
     {
@@ -108,25 +107,40 @@ const saveItem = async (item,account) =>
 
         const toSave = item["details"];
         toSave["account"] = account;
-        await collection.updateOne
-        (
-            {
-                "account":account,
-                "identifier":item["details"]["identifier"]
-            },
-            { $set:item["details"]},
-            {upsert:true}
-        );
+        if(update)
+        {
+            const attempt = await collection.updateOne
+            (
+                {
+                    "account":toSave["account"],
+                    "identifier":toSave["identifier"]
+                },
+                {"$set":toSave},
+                {upsert:false}
+            );
+            if (attempt.result.n == 0) throw "Item does not exist";
+        }
+        else
+        {
+            await collection.insertOne
+            (
+                toSave
+            );
+        }
 
         return {
             "success":true,
             "status":200,
-            "message":"Item saved"
+            "message":update ? "Item updated" : "Item saved"
         }
     }
     catch (error)
     {
-        throw error;
+        throw {
+            "success":false,
+            "status":400,
+            "message":error.code == 11000 ? "Item already exists for account" : "Item does not exist for account"
+        }
     }
 }
 

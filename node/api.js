@@ -67,8 +67,6 @@ const createAccountAPI = async (req,res) =>
 
     try
     {
-        verifyToken(req.headers["authorization"].split(" ")[1]);
-
         if (isEmpty(username) || isEmpty(password) || isEmpty(email))
         {
             throw {"message":"Missing username, password, and/or email"};
@@ -146,11 +144,14 @@ const getItemsAPI = async (req,res) =>
     }
 }
 
-const saveItemAPI = async (req,res) =>
+const saveItemAPI = (req,res) => {modifyItem(req,res,false);}
+const updateItemAPI = (req,res) => {modifyItem(req,res,true);}
+
+const modifyItem = async (req,res,update) =>
 {
     try
     {
-        const save = await saveItem(req.body,req.params.account);
+        const save = await saveItem(req.body,req.params.account,update);
         res.json(save);
     }
     catch (error)
@@ -160,4 +161,4 @@ const saveItemAPI = async (req,res) =>
     }
 }
 
-module.exports = {loginAPI,createAccountAPI,validItemsAPI,getItemsAPI,saveItemAPI}
+module.exports = {loginAPI,createAccountAPI,validItemsAPI,getItemsAPI,saveItemAPI,updateItemAPI}
