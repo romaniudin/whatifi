@@ -1,86 +1,164 @@
 const bcrypt = require("bcrypt");
-const passport = require("passport");
-const basicStrategy = require("passport-http").BasicStrategy;
-const mongo = require("mongodb").MongoClient;
 const jwt = require("jsonwebtoken");
+const emailValidator = require("email-validator");
+
+const {encrypt} = require("./apiHelper");
+const {createAccount,validatePassword} = require("./account");
+const {validItemTypes,getItems,saveItem} = require("./items");
 
 const saltRounds = 10;
+const tokenSalt = "fdsgf$#QFDSA324gfa23113&hhSDg312";
+const isEmpty = str => {return str == "" || str == null};
 
-const setCorsHeaders = (req,res,next) =>
+const verifyToken = (token) =>
 {
-    res.setHeader("Access-Control-Allow-Origin","*");
-    res.setHeader("Access-Control-Allow-Headers", ["Authorization","content-type"]);
-    next();
-}
-
-const async_verify = async (username,password) => {
-
     try
     {
-        const connection = await mongo.connect("mongodb://127.0.0.1:27017",{useNewUrlParser:true});
-        const res = await connection.db("whatifi").collection("users").findOne({"username":username});
-        const compare = await bcrypt.compare(password,res["hash"]);
-
-        return compare;
+        jwt.verify(token,tokenSalt);
+        return true;
     }
-    catch (e) {return false}
+    catch (error)
+    {
+        console.log(error);
+        throw "Invalid token";
+    }
 }
 
-passport.use(new basicStrategy( async (username,password,done) => {
-
-    const v = await async_verify(username,password);
-    done(null,v ? username : v);
-}));
-
-const verifyLogin = () => { return passport.authenticate("basic",{session:false})};
-
-const loginRequest = async (req,res) =>
+const loginAPI = async (req,res) =>
 {
+    if (!req.user["success"])
+    {
+        return res.json(req.user);
+    }
+
     try
     {
-        const token = await jwt.sign({"username":req.user},"testtokensalt!@#@!##213",{expiresIn:"10m"});
-        res.json({"token":token});
+        const token = await jwt.sign({"username":req.user["username"]},tokenSalt,{expiresIn:"24h"});
+        res.json
+        (
+            {
+                "success":true,
+                "status":200,
+                "message":"Successful login",
+                "token":encrypt(token),
+                "resetRequired":req.user["resetRequired"]
+            }
+        );
+        console.log("[Login]",req.user["username"]);
     }
     catch (e)
     {
-        res.sendStatus(401);
+        res.json
+        (
+            {
+                "success":false,
+                "status":500,
+                "message":e ? e : "Server error"
+            }
+        );
     }
 }
 
-const createAccount = (account) => new Promise((resolve,reject) => {
-
-    mongo.connect("mongodb://127.0.0.1:27017",{useNewUrlParser:true}, (err,connection) => {
-
-        if (err) {return reject(err["errmsg"]);}
-
-        connection.db("whatifi").collection("users").insertOne(account, (err,res) => {
-
-            if (err) {return reject(err["errmsg"]);}
-            resolve();
-        });
-    }); 
-});
-
-const createAccountRequest = async (req,res) =>
+const createAccountAPI = async (req,res) =>
 {
-    console.log("create account",req.body);
     const username = req.body["username"];
     const password = req.body["password"];
     const email = req.body["email"];
 
-    if (username == "" || password == "" || email == ""){return res.sendStatus(401);}
+    try
+    {
+        if (isEmpty(username) || isEmpty(password) || isEmpty(email))
+        {
+            throw {"message":"Missing username, password, and/or email"};
+        }
+        if (!emailValidator.validate(email))
+        {
+            throw {"message":"Invalid email"};
+        }
+        const passwordErrors = validatePassword(password);
+        if (passwordErrors.length > 0)
+        {
+            throw {
+                "message": "Invalid password",
+                "info":passwordErrors
+            }
+        }
+
+    }
+    catch (error)
+    {
+        return res.json
+        (
+            {
+                "success":false,
+                "status":400,
+                "message":error["message"],
+                "info":error["info"] ? error["info"] : null
+            }
+        );
+    }
 
     try
     {
         const hash = await bcrypt.hash(password,saltRounds);
-        await createAccount({"username":username,"hash":hash,"email":email});
-        res.sendStatus(200);
+        const create = await createAccount({"username":username,"hash":hash,"email":email});
+        res.json(create);
+        console.log("[Create Account] Username:",req.body["username"],", Email:",req.body["email"]);
     }
     catch (e)
     {
-        console.log(e);
-        res.sendStatus(401);
+        res.json(e);
     }
 }
 
-module.exports = {setCorsHeaders,verifyLogin,loginRequest,createAccountRequest}
+const validItemsAPI = (req,res) =>
+{
+    res.json(validItemTypes);
+}
+
+const getItemsAPI = async (req,res) =>
+{
+    try
+    {
+        const result = await getItems(req.query);
+        res.json
+        (
+            {
+                "success":true,
+                "status":200,
+                "message":result
+            }
+        );
+    }
+    catch (error)
+    {
+        console.log(error);
+        res.json
+        (
+            {
+                "success":false,
+                "status":400,
+                "message":error
+            }
+        )
+    }
+}
+
+const saveItemAPI = (req,res) => {modifyItem(req,res,false);}
+const updateItemAPI = (req,res) => {modifyItem(req,res,true);}
+
+const modifyItem = async (req,res,update) =>
+{
+    try
+    {
+        const save = await saveItem(req.body,req.params.account,update);
+        res.json(save);
+    }
+    catch (error)
+    {
+        console.log(error);
+        res.json(error);
+    }
+}
+
+module.exports = {loginAPI,createAccountAPI,validItemsAPI,getItemsAPI,saveItemAPI,updateItemAPI}
