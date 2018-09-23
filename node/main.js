@@ -12,9 +12,7 @@ const apiPort = 8080;
 const parseErrorHandler = middlewareError("Parsing error");
 
 app.use("/login",setCorsHeaders);
-app.use("/login",bodyParser.json(),parseErrorHandler);
-app.use("/login",verifyLogin());
-app.get("/login",loginAPI);
+app.get("/login",verifyLogin(),loginAPI);
 
 app.use("/create",setCorsHeaders);
 app.use("/create",bodyParser.json(),parseErrorHandler);
