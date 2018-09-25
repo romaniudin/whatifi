@@ -120,7 +120,7 @@ const getItemsAPI = async (req,res) =>
 {
     try
     {
-        const result = await getItems(req.query);
+        const result = await getItems(req.params.account,req.query);
         res.json
         (
             {

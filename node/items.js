@@ -56,7 +56,7 @@ const validItemTypes = Object.keys(itemVerification);
 
 const getItems = async (account,query) =>
 {
-    const type = query.type;
+    const type = query["type"];
 
     if (type && type != "all" && itemVerification[type] == null)
     {
@@ -67,7 +67,7 @@ const getItems = async (account,query) =>
     let allCollections = [];
     if (type == null || type == "all")
     {
-        allCollections = Object.keys(itemHandlers);
+        allCollections = Object.keys(itemVerification);
     }
     else
     {
@@ -136,10 +136,21 @@ const saveItem = async (item,account,update) =>
     }
     catch (error)
     {
-        throw {
-            "success":false,
-            "status":400,
-            "message":error.code == 11000 ? "Item already exists for account" : "Item does not exist for account"
+        if (item == null)
+        {
+            throw {
+                "success":false,
+                "status":400,
+                "message": "Received empty/null item"
+            }
+        }
+        else
+        {
+            throw {
+                "success":false,
+                "status":400,
+                "message": update ? "Item does not exist for account" : "Item already exists for account"
+            }
         }
     }
 }

@@ -17,6 +17,11 @@ const async_verify = async (username,password) =>
         }
 
         const user = await collection.findOne({"username":username});
+        if (user == null)
+        {
+            throw {"success":false,"code":401,"message":"Incorrect credentials"};
+        }
+
         const valid = await bcrypt.compare(password,user["hash"]);
 
         if (valid)
