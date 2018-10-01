@@ -1,0 +1,95 @@
+<html>
+    <head>
+        <script crossorigin src="https://unpkg.com/react@16/umd/react.production.min.js"></script>
+        <script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+        <script src="scripts/components.js"></script>
+        <script src="scripts/index.js"></script>
+        <script src="scripts/nodes.js"></script>
+        <script>
+
+            function allowDrop(ev) {
+            ev.preventDefault();
+            }
+
+            function drag(ev) {
+                ev.dataTransfer.setData("text", ev.target.id.replace("node-root-",""));
+            }
+
+            function drop(ev) {
+                ev.preventDefault();
+
+                const components = ev.target.id.split("node-");
+                const node = "node-"+components.slice(-1);
+
+                var data = ev.dataTransfer.getData("text");
+                addChild(data,node);
+
+                document.getElementById("node").innerHTML = generateNode(me);
+            }
+    
+        </script>
+    </head>
+    <body>
+        <div id="node"></div>
+        <script>
+            const me = addNode("Rob","me");
+
+            let city = addNode("Vancouver","location");
+            addChild(city,me);
+
+                let job = addNode("DMG","income");
+                addChild(job,city);
+
+                    let transportation = addNode("Transportation","expense");
+                    addChild(transportation,job);
+                    addChild(addNode("Transit","expense"),transportation);
+
+                    let car = addNode("Car","expense");
+                    addChild(car,transportation);
+                    addChild(addNode("Civic","expense"),car);
+                    addChild(addNode("Toyota - Rav4","expense"),car);
+                    addChild(addNode("Lexus - NX300","expense"),car);
+
+
+                job = addNode("Fortinet","income");
+                addChild(job,city);
+
+                    transportation = addNode("Transportation","expense");
+                    addChild(transportation,job);
+
+                    car = addNode("Car","expense");
+                    addChild(car,transportation);
+                    addChild(addNode("Civic","expense"),car);
+                    addChild(addNode("Toyota - Rav4","expense"),car);
+
+                job = addNode("Sophos","income");
+                addChild(job,city);
+
+                    transportation = addNode("Transportation","expense");
+                    addChild(transportation,job);
+                    addChild(addNode("Transit","expense"),transportation);
+
+                    car = addNode("Car","expense");
+                    addChild(car,transportation);
+                    addChild(addNode("Civic","expense"),car);
+
+            city = addNode("New York","location");
+            addChild(city,me);
+
+                job = addNode("MasterCard","income");
+                addChild(job,city);
+
+                    transportation = addNode("Transportation","expense");
+                    addChild(transportation,job);
+                    addChild(addNode("Transit","expense"),transportation);
+                    addChild(addNode("Uber","expense"),transportation);
+
+            let level = 0;
+            console.log(tree(me));
+            console.log(nodes);
+            document.getElementById("node").innerHTML = generateNode(me);
+        </script>
+    </body>
+</html>
