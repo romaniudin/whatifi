@@ -1,5 +1,6 @@
 "use strict";
 
+const animationDelay = 150;
 const nodes = {};
 const nodeTypes =
 [
@@ -42,22 +43,25 @@ const addChild = (nodeId,parentNodeId) =>
 
     if (nodes[parentNodeId] == null)
     {
-        console.log(nodeId,parentNodeId);
         return toast("Parent node does not exist");
     }
 
     const node = nodes[nodeId];
-    const currentParent = node["parentNode"];
+    const parentNode = nodes[parentNodeId];
 
-    if (currentParent != null)
+    parentNode["childrenNodes"].push(nodeId);
+    node["parentNodes"].push(parentNodeId);
+
+    const diff = parentNode["level"]+1 - node["level"];
+    if (diff > 0)
     {
-        const index = nodes[currentParent]["childrenNodes"].indexOf(nodeId);
-        nodes[currentParent]["childrenNodes"].splice(index);
+        traverse(nodeId,null,null,
+            (node) =>
+            {
+                node["level"] += diff;
+            }
+        );
     }
-
-    nodes[parentNodeId]["childrenNodes"].push(nodeId);
-    nodes[nodeId]["parentNode"] = parentNodeId;
-    nodes[nodeId]["nodeLevel"] = nodes[parentNodeId]["nodeLevel"]+1;
 }
 
 const addNode = (nodeName,nodeType,nodeDetails) =>
@@ -69,21 +73,31 @@ const addNode = (nodeName,nodeType,nodeDetails) =>
     }
 
     let nodeNumber = 1;
-    let nodeId = "node-"+nodeName.toLowerCase();
+    let nodeId = "node-"+nodeName.toLowerCase().replace(" ","_");
     while (nodes[nodeId] != null)
     {
         nodeNumber += 1;
         nodeId = "node-"+nodeName.toLowerCase()+"-"+nodeNumber.toString();
     }
 
-    nodes[nodeId] =
+    const node =
     {
         "nodeId":nodeId,
         "nodeName":nodeName,
-        "parentNode":null,
+        "level":0,
+        "parentNodes":[],
         "childrenNodes":[],
-        "nodeLevel": 0 
+        "selected":false,
+        "highlighted":false,
     };
+
+    for (let key in nodeDetails)
+    {
+        if (node[key] != null) {continue}
+        node[key] = nodeDetails[key];
+    }
+
+    nodes[nodeId] = node;
 
     return nodeId;
 }
@@ -91,31 +105,205 @@ const addNode = (nodeName,nodeType,nodeDetails) =>
 const tree = (nodeId) =>
 {
     const root = {};
-    //root[nodeId] = traverse(nodeId);
     root["name"] = nodeId;
     root["children"] = traverse(nodeId);
 
     return root;
 }
 
-const traverse = (nodeId) =>
+const traverseUniqueChildren = (childNodeId,uniqueChildren) =>
 {
+    if (uniqueChildren.indexOf(childNodeId) == -1)
+    {
+        uniqueChildren.push(childNodeId);
+        return true;
+    }
+    else
+    {
+        return false
+    }
+}
+
+const traverse = (nodeId,traverseChildrenCallback=null,traverseChildrenCallbackArg=null,performCallback=null) =>
+{
+    const cb = traverseChildrenCallback;
+    const cbArg = traverseChildrenCallbackArg;
     const node = nodes[nodeId];
     const root =
     {
         "name":node["nodeName"],
-        "nodeId":node["nodeId"]
+        "nodeId":node["nodeId"],
+        "parentNodes":node["parentNodes"],
+        "selected":node["selected"],
+        "highlighted":node["highlighted"],
     };
-    const tree = [];
 
+    if (performCallback) performCallback(node);
+
+    if (cb && !cb(nodeId,cbArg))
+    {
+        return root;
+    }
+
+    const tree = [];
     for (let obj in node["childrenNodes"])
     {
         const child = node["childrenNodes"][obj];
-        tree.push(traverse(child));
+        tree.push(traverse(child,cb,cbArg,performCallback));
     }
     if (tree.length > 0)root["children"] = tree;
 
     return root;
+}
+
+let selectedNodes = [];
+const toggleSelectNode = (nodeId) =>
+{
+    const node = nodes[nodeId];
+    return node.selected ? unselectNode(nodeId) : selectNode(nodeId);
+}
+
+const selectNode = (nodeId) =>
+{
+    const node = nodes[nodeId];
+    node.selected = true;
+
+    if (selectedNodes.indexOf(nodeId) == -1)
+    {
+        selectedNodes.push(nodeId);
+    }
+
+    updateNodeSelected(nodeId,node.selected);
+}
+
+const unselectNode = (nodeId) =>
+{
+    const node = nodes[nodeId];
+    node.selected = false;
+
+    let i = selectedNodes.indexOf(nodeId);
+    if (i > -1) {selectedNodes.splice(i,1);};
+
+    updateNodeSelected(nodeId,node.selected);
+}
+const unselectAllNodes = () =>
+{
+    selectedNodes.map
+    (
+        (nodeId) =>
+        {
+            nodes[nodeId]["selected"] = false;
+        }
+    );
+    selectedNodes = [];
+    render();
+}
+
+let highlightedNodes = [];
+const highlightNode = (nodeId) =>
+{
+    const node = nodes[nodeId];
+    node.highlighted = !node.highlighted;
+
+    if (node.highlighted)
+    {
+        highlightedNodes.push(nodeId);
+    }
+    else
+    {
+        let i = highlightedNodes.indexOf(nodeId);
+        if (i > -1) {highlightedNodes.splice(i,1);};
+    }
+
+    renderNodeHighlight(nodeId);
+}
+
+const unhighlightAllNodes = () =>
+{
+    highlightedNodes.map
+    (
+        (nodeId) =>
+        {
+            nodes[nodeId]["highlighted"] = false;
+            renderNodeHighlight(nodeId);
+        }
+    );
+    highlightedNodes = [];
+}
+
+const flashNode = (nodeId,flash=0) =>
+{
+    if (flash < 6)
+    {
+        highlightNode(nodeId);
+        setTimeout(() => {flashNode(nodeId,flash+1);},250);
+    }
+} 
+
+const startReverseTraverse = (nodeId) =>
+{
+    const traversedNodes = [];
+    unhighlightAllNodes(); 
+    removeAllLinkTraverse(); 
+    reverseTraverse(nodeId,traversedNodes);
+}
+
+const findFinancialValues = (allNodes) =>
+{
+    const allFinances = []
+    allNodes.map
+    (
+        (nodeId) => 
+        {
+            const node = nodes[nodeId];
+            if (node.finance) allFinances.push(node.finance);
+        }
+    );
+    return allFinances;
+}
+
+const reverseTraverse = (nodeId,traversedNodes) =>
+{
+    const node = nodes[nodeId];
+    highlightNode(nodeId);
+    selectNode(nodeId);
+    traversedNodes.push(nodeId);
+    if (node["parentNodes"].length == 0)
+    {
+        const finance = findFinancialValues(traversedNodes);
+        if (finance.length > 0) renderGraph(finance);
+    }
+    else if (node["parentNodes"].length > 1)
+    {
+        for (let i in node["parentNodes"])
+        {
+            const parentNodeId = node["parentNodes"][i]
+            const parentNode = nodes[parentNodeId];
+
+            if (parentNode["selected"])
+            {
+                return setTimeout
+                (
+                    () => 
+                    {
+                        renderLinkTraverse(parentNodeId,nodeId);
+                        setTimeout(()=>reverseTraverse(parentNode["nodeId"],traversedNodes),animationDelay);
+                    },
+                    animationDelay
+                );
+            }
+        }
+
+        traversedNodes = [];
+        toast("Please select one of these nodes (right click)");
+        node["parentNodes"].map( (nodeId) => {flashNode(nodeId)} );
+    }
+    else
+    {
+        const nextId = node["parentNodes"][0];
+        renderLinkTraverse(nextId,nodeId);
+        setTimeout(() => {reverseTraverse(nextId,traversedNodes)},100);
+    }
 }
 
 const generateNode = (nodeId) =>
