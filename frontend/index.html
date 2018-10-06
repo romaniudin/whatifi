@@ -33,6 +33,7 @@
     </head>
     <body>
         <div id="node"></div>
+        <script src="https://d3js.org/d3.v3.min.js"></script>
         <script>
             const me = addNode("Rob","me");
 
@@ -87,9 +88,62 @@
                     addChild(addNode("Uber","expense"),transportation);
 
             let level = 0;
-            console.log(tree(me));
-            console.log(nodes);
-            document.getElementById("node").innerHTML = generateNode(me);
+            var canvas = d3.select("body").append("svg")
+                .attr("width","100%")
+                .attr("height","100%")
+                .append("g")
+                .attr("transform","translate(50,50)");
+
+            var treechart = d3.layout.tree()
+                .size([1200,800]);
+
+            var _nodes = treechart.nodes(traverse(me));
+            var links = treechart.links(_nodes);
+
+            console.log(_nodes);
+            console.log(links);
+
+            var diagonal = d3.svg.diagonal()
+                .projection((d)=> {return [d.y,d.x];})
+
+            canvas.selectAll(".link")
+                .data(links)
+                .enter()
+                .append("line")
+                .attr("class","link")
+                .attr("fill","none")
+                .attr("stroke","steelblue")
+                .attr("stroke-width",4)
+                .attr("x1",(d) => {return d.source.y;})
+                .attr("y1",(d) => {return d.source.x;})
+                .attr("x2",(d) => {return d.target.y;})
+                .attr("y2",(d) => {return d.target.x;})
+
+            var node = canvas.selectAll(".node")
+                .data(_nodes)
+                .enter()
+                .append("g")
+                .attr("class","node")
+                .attr("transform", (d)=>{return `translate (${d.y},${d.x})`});
+
+            node.append("circle")
+                .attr("r",40)
+                .attr("fill","white")
+                .attr("stroke","steelblue")
+                .attr("stroke-width",4)
+
+            node.append("circle")
+                .attr("r",15)
+                .attr("fill","grey")
+                .attr("stroke","steelblue")
+                .attr("stroke-width",4)
+                .attr("cx","30")
+                .attr("cy","-30")
+
+            node.append("text")
+                .text((d)=>{return `${d.name}`})
+                .attr("text-anchor","middle")
+                .attr("y",5);
         </script>
     </body>
 </html>

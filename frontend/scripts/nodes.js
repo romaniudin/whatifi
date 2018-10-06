@@ -91,23 +91,31 @@ const addNode = (nodeName,nodeType,nodeDetails) =>
 const tree = (nodeId) =>
 {
     const root = {};
-    root[nodeId] = traverse(nodeId);
+    //root[nodeId] = traverse(nodeId);
+    root["name"] = nodeId;
+    root["children"] = traverse(nodeId);
 
     return root;
 }
 
 const traverse = (nodeId) =>
 {
-    const tree = {};
     const node = nodes[nodeId];
+    const root =
+    {
+        "name":node["nodeName"],
+        "nodeId":node["nodeId"]
+    };
+    const tree = [];
 
     for (let obj in node["childrenNodes"])
     {
         const child = node["childrenNodes"][obj];
-        tree[child] = traverse(child);
+        tree.push(traverse(child));
     }
+    if (tree.length > 0)root["children"] = tree;
 
-    return tree;
+    return root;
 }
 
 const generateNode = (nodeId) =>
@@ -116,7 +124,7 @@ const generateNode = (nodeId) =>
 
     const node = nodes[nodeId];
 
-    html += "<td><div id=\"node-name-"+nodeId+"\" class=\"node-name\">";
+    html += "<td><div id=\"node-name-"+nodeId+"\" class=\"node-name\" style=\"border:1px solid black\">";
     html += node["nodeName"];
     html += "</td></div>";
 
