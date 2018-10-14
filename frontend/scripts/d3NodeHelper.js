@@ -15,9 +15,6 @@ const linkTraversedColour = "black";
 
 const render = () =>
 {
-    const nodeGraph = d3.forceSimulation()
-        .force("link",d3.forceLink().id(d => d.nodeId));
-
     let allNodes = [];
     for (const nodeId in nodes)
     {
@@ -66,8 +63,6 @@ const render = () =>
 let lastValidZoom = 1;
 const createCanvas = (xRange,yRange) =>
 {
-    console.log(xRange,yRange);
-    console.log(d3.select("#node-graph"));
     const xLength = xRange[1] - xRange[0];
     const yLength = yRange[1] - yRange[0];
     if (svg)

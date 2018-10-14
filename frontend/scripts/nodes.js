@@ -1,4 +1,5 @@
 "use strict";
+let currentTraverse;
 
 const animationDelay = 150;
 const nodes = {};
@@ -242,10 +243,11 @@ const flashNode = (nodeId,flash=0) =>
 
 const startReverseTraverse = (nodeId) =>
 {
-    const traversedNodes = [];
+    console.log("rev",nodeId);
+    currentTraverse = [];
     unhighlightAllNodes(); 
     removeAllLinkTraverse(); 
-    reverseTraverse(nodeId,traversedNodes);
+    reverseTraverse(nodeId,currentTraverse);
 }
 
 const findFinancialValues = (allNodes) =>

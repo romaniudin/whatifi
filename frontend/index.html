@@ -11,6 +11,7 @@
         <script src="scripts/whatifi.js"></script>
         <script src="scripts/d3NodeHelper.js"></script>
         <script src="scripts/d3LineHelper.js"></script>
+        <script src="scripts/d3ScenarioHelper.js"></script>
         <script>
 
             document.addEventListener('contextmenu', event => event.preventDefault());
@@ -39,7 +40,8 @@
     </head>
     <body>
         <div id="node-graph" style="border:1px solid black"></div>
-        <div id="line-graph"></div>
+        <div id="scenario-bar"></div>
+        <div id="line-graph" style="border:1px solid black"></div>
         <script>
             const me = addNode("Rob","me");
             const job = addNode("Job","income");
@@ -132,6 +134,7 @@
                     addChild(addNode("Uber","expense"),transportation);
 */
             render();
+            renderScenario();
 
         </script>
     </body>
