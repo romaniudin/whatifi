@@ -4,111 +4,139 @@ const buttonHeight = 25;
 
 const scenarioNameLimit = 15;
 
-const allScenario = {};
-
 let scenarioCanvas;
+let scenarioDisplayMonthly = true;
 
-const addScenario = () =>
+const toggleScenarioDisplay = () =>
 {
-    if (currentTraverse && currentTraverse.length > 0)
-    {
-        const scenarioId = currentTraverse.join(":");
-        if (allScenario[scenarioId] == null)
-        {
-            toast("Scenario added");
-            allScenario[scenarioId] = 
-            {
-                "name":`Scenario ${Object.keys(allScenario).length}`,
-                "arg":scenarioId,
-                "scenario":currentTraverse,
-                "action":"loadScenario"
-            };
-
-            renderScenarioButtons();
-        }
-        else
-        {
-            toast("Scenario already exists");
-        }
-    }
-    else
-    {
-        toast("No current scenario");
-    }
+    scenarioDisplayMonthly = !scenarioDisplayMonthly;
+    d3.select("#scenario-show_monthly text").text(scenarioDisplayMonthly ? "Show Monthly" : "Show Total");
 }
 
-const loadScenario = (scenario) =>
+const renderScenario = () =>
 {
-    console.log("sce",scenario);
-    allScenario[scenario]["scenario"].map
-    (
-        (nodeId) =>
-        {
-            selectNode(nodeId);
-        }
-    );
-    startReverseTraverse(allScenario[scenario]["scenario"][0]);
+    allScenario["Whatifi-Saved-Scenario-Header"] = {"name":"Saved Scenarios","action":null,"arg":""};
+    renderScenarioActions();
+    renderScenarioSaved();
 }
 
-const renderScenarioButtons = () =>
+const renderScenarioActions = () =>
 {
-    scenarioCanvas.selectAll("#scenario-viewbox g").remove();
+    const actions = [];
+    actions.push({"name":"Actions","action":null,"arg":""});
+    actions.push({"name":"Save Scenario","action":"addScenario","arg":""});
+    actions.push({"name":"Compare","action":"compareScenario","arg":""});
+    actions.push({"name":"Show Monthly","action":"toggleScenarioDisplay","arg":""});
+
+    d3.select("#scenario-bar-actions").remove();
+
+    const actionBar = d3.select("#scenario-bar")
+        .append("svg")
+        .attr("width","100%")
+        .attr("height",`${buttonHeight+buttonPadding}`);
+
+    actionBar.append("rect")
+        .attr("fill","gainsboro")
+        .attr("stroke","grey")
+        .attr("stroke-width",4)
+        .attr("opacity",0.25)
+        .attr("height","100%")
+        .attr("width","100%");
+
+    actionBar.attr("id","scenario-bar-actions");
+
+    createScenarioButtons("scenario-bar-actions",actions,"scenario-action");
+}
+
+const renderScenarioSaved = () =>
+{
+    d3.select("#scenario-bar-saves").remove();
+
+    const savedScenarioBar = d3.selectAll("#scenario-bar")
+        .append("svg")
+        .attr("height",`${buttonHeight+buttonPadding}px`)
+        //.attr("viewBox",`0 0 100% 50`)
+        .attr("width","100%")
+        .attr("id","scenario-bar-saves");
+
+    savedScenarioBar.append("rect")
+        .attr("fill","gainsboro")
+        .attr("stroke","grey")
+        .attr("stroke-width",4)
+        .attr("opacity",0.25)
+        .attr("height","100%")
+        .attr("width","100%");
 
     const scenarios = [];
     for (const scenario in allScenario)
     {
         scenarios.push(allScenario[scenario]);
     }
+    createScenarioButtons("scenario-bar-saves",scenarios,"scenario-save");
+}
 
-    const scenarioButtons = scenarioCanvas.selectAll("scenario")
-        .data(scenarios)
+const createScrollButton = () =>
+{
+    d3.select("#scenario-bar")
+        .append("svg")
+        .attr("height",`${buttonHeight+buttonPadding}px`)
+        .attr("width","20px")
+        .append("g")
+        .append("rect")
+        .attr("height","10px")
+        .attr("width","10px")
+        .attr("fill","black");
+
+}
+
+const createScenarioButtons = (holder,data,buttonType,offset=0) =>
+{
+    const buttonOffset = offset*(buttonWidth+buttonPadding);
+    console.log("offset",offset);
+    const scenarios = d3.select(`#${holder}`)
+        .selectAll(buttonType)
+        .data(data)
         .enter()
         .append("g")
         .attr("id",d=>{return `scenario-${d.name.toLowerCase().replace(" ","_")}`})
-        .attr("onclick",d=>`${d.action}("${d.arg}")`);
+        .attr
+        (
+            "onclick",
+            (d) =>
+            {
+                if (d.action != null)
+                {
+                    return `${d.action}("${d.arg}")`;
+                }
+                else
+                {
+                    return "";
+                }
+            }
+        );
 
-    createScenarioButtons(scenarioButtons);
-}
-
-const renderScenario = () =>
-{
-    scenarioCanvas = d3.select("#scenario-bar")
-        .append("svg")
-        .attr("width","100%")
-        .attr("height","70px")
-        .append("g")
-        .attr("id","scenario-viewbox")
-        .attr("viewBox","0 0 200 200");
-
-    allScenario["SaveScenario"] = {"name":"Save Scenario","action":"addScenario","arg":""};
-
-    renderScenarioButtons();
-}
-
-const createScenarioButtons = (scenarios) =>
-{
     scenarios.append("rect")
-        .attr("fill","none")
-        .attr("stroke","black")
-        .attr("stroke-width",6)
+        .attr("fill",d => {if (d.action == null) {return "none"}else {return "black"}})
+        .attr("stroke",d => {if (d.action == null) {return "none"}else {return "black"}})
+        .attr("stroke-width",3)
         .attr("opacity",0.25)
         .attr("width",`${buttonWidth}px`)
         .attr("height",`${buttonHeight}px`)
-        .attr("rx",10)
-        .attr("ry",10)
-        .attr("x",(d,i) => i*(buttonPadding+buttonWidth)+buttonPadding)
-        .attr("y",buttonPadding);
+        .attr("rx",5)
+        .attr("ry",5)
+        .attr("x",(d,i) => i*(buttonPadding+buttonWidth)+buttonPadding+2+buttonOffset)
+        .attr("y",buttonPadding/2+2);
 
     scenarios.append("rect")
-        .attr("fill","white")
-        .attr("stroke","steelblue")
+        .attr("fill",d => {if (d.action == null) {return "none"}else {return "white"}})
+        .attr("stroke",d => {if (d.action == null) {return "none"}else {return "steelblue"}})
         .attr("stroke-width",3)
         .attr("width",`${buttonWidth}px`)
         .attr("height",`${buttonHeight}px`)
-        .attr("rx",10)
-        .attr("ry",10)
-        .attr("x",(d,i) => i*(buttonPadding+buttonWidth)+buttonPadding)
-        .attr("y",buttonPadding);
+        .attr("rx",5)
+        .attr("ry",5)
+        .attr("x",(d,i) => i*(buttonPadding+buttonWidth)+buttonPadding+buttonOffset)
+        .attr("y",buttonPadding/2);
 
     scenarios.append("text")
         .text
@@ -124,6 +152,6 @@ const createScenarioButtons = (scenarios) =>
             }
         )
         .attr("text-anchor","middle")
-        .attr("x",(d,i) => i*(buttonPadding+buttonWidth)+buttonPadding+buttonWidth/2)
-        .attr("y",buttonPadding+buttonHeight/2+4.5);
+        .attr("x",(d,i) => i*(buttonPadding+buttonWidth)+buttonPadding+buttonWidth/2+buttonOffset)
+        .attr("y",buttonPadding/2+buttonHeight/2+4.5);
 }

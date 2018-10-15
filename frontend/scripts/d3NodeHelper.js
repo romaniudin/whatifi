@@ -91,6 +91,7 @@ const createCanvas = (xRange,yRange) =>
                 () =>
                 {
                     const transformEvent = d3.event.transform;
+/*
                     const bound = d3.select("#node-graph").node().getBoundingClientRect();
                     const xDiff = bound.width > (xLength + 2*nodeDistance)*transformEvent.k ? 0 : (xLength + 2*nodeDistance) - bound.width;
                     const yDiff = bound.height > (yLength + 2*nodeDistance)*transformEvent.k ? 0 : (yLength + 2*nodeDistance) - bound.height;
@@ -112,7 +113,7 @@ const createCanvas = (xRange,yRange) =>
                     if (transformEvent.x < -xDiff) transformEvent.x = -xDiff;
                     if (transformEvent.y > yDiff) transformEvent.y = yDiff;
                     if (transformEvent.y <- yDiff) transformEvent.y = -yDiff;
-
+*/
                     nodeCanvas.attr("transform",transformEvent);
                 }
             )
@@ -182,31 +183,26 @@ const generateLinks = (balancedNodes) =>
 const renderNodeSelection = (nodeId) =>
 {
     const node = nodes[nodeId];
-
-    const imgNode = d3.select(`#node-graph svg #node-graph-viewbox #${nodeId}-element .img-node`);
-    imgNode.attr("stroke", node.selected ? nodeSelectedBorderColour : nodeBorderColour);
+    d3.select(`#node-graph svg #node-graph-viewbox #${nodeId}-element .img-node`)
+        .attr("stroke", node.selected ? nodeSelectedBorderColour : nodeBorderColour);
 }
 
 const renderNodeHighlight = (nodeId) =>
 {
     const node = nodes[nodeId];
-    const element = d3.select(`#node-graph svg #node-graph-viewbox #${nodeId}-element .main-node`);
-    element.attr("fill", node.highlighted ? nodeHighlightedColour : "white");
+    d3.select(`#node-graph svg #node-graph-viewbox #${nodeId}-element .main-node`)
+        .attr("fill", node.highlighted ? nodeHighlightedColour : "white");
 }
 
 const renderLinkTraverse = (fromNodeId,toNodeId) =>
 {
-    const outer = d3.selectAll(`#node-graph svg #node-graph-viewbox g line#from_${fromNodeId}_to_${toNodeId}_outer`).attr("stroke",linkTraversedColour);
-
     const inner = d3.selectAll(`#node-graph svg #node-graph-viewbox g line#from_${fromNodeId}_to_${toNodeId}_inner`)
-    .attr("stroke","steelblue")
-    .attr("opacity",0.8);
+        .attr("stroke","steelblue")
+        .attr("opacity",0.8);
 }
 
 const removeAllLinkTraverse = () =>
 {
-    d3.selectAll(".link-outer")
-        .attr("stroke",linkUnhighlightedColour);
     d3.selectAll(".link-inner")
         .attr("opacity",0.25);
 }
@@ -249,14 +245,22 @@ const createNodeElements = (node) =>
         .attr("stroke-width",4)
         .attr("cx","30")
         .attr("cy","-30");
+/*
+    const dummyText = node.append("text")
+        .text(d=>d.nodeName)
+        .attr("id","dummy-text")
+        .attr("text-anchor","middle")
+        .attr("y",5);
 
+    console.log(d3.selectAll("#dummy-text"));
+
+    dummyText.remove();
+*/
     node.append("text")
         .text(d=>d.nodeName)
         .attr("text-anchor","middle")
-        .attr("y",5)
-        .attr("background","white");
-
-    node.insert("rect","text").attr("fill","white").attr("width",500);
+        .attr("y",5);
+    console.log(node.select("text"));
 }
 
 const createNodeShadowElements = (node) =>
@@ -264,30 +268,32 @@ const createNodeShadowElements = (node) =>
     node.append("circle")
         .attr("class","main-node-shadow")
         .attr("r",40)
-        .attr("fill","white")
+        .attr("fill","black")
         .attr("opacity",0.25)
-        .attr("stroke",nodeShadowColour)
-        .attr("stroke-width",8);
+        .attr("stroke","black")
+        .attr("stroke-width",5)
+        .attr("cx","2")
+        .attr("cy","2");
+
+    node.append("circle")
+        .attr("class","img-node-shadow")
+        .attr("r",15)
+        .attr("fill","black")
+        .attr("opacity",0.25)
+        .attr("stroke","black")
+        .attr("stroke-width",5)
+        .attr("cx","32")
+        .attr("cy","-28");
 }
 
 const createLinkElements = (link) =>
 {
     link.append("line")
-        .attr("id",d => `from_${d.from}_to_${d.to}_outer`)
-        .attr("class","link-outer")
-        .attr("opacity",0.25)
-        .attr("stroke","none")
-        .attr("stroke-width",10)
-        .attr("x1",(d) => {return d.y1;})
-        .attr("y1",(d) => {return d.x1;})
-        .attr("x2",(d) => {return d.y2;})
-        .attr("y2",(d) => {return d.x2;});
-
-    link.append("line")
         .attr("id",d => `from_${d.from}_to_${d.to}_inner`)
         .attr("class","link-inner")
         .attr("stroke","steelblue")
         .attr("stroke-width",4)
+        .attr("opacity",0.25)
         .attr("x1",(d) => {return d.y1;})
         .attr("y1",(d) => {return d.x1;})
         .attr("x2",(d) => {return d.y2;})
