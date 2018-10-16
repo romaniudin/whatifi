@@ -12,12 +12,12 @@ const renderGraph = (data) =>
     const width = 500;
     const height = 300;
 
-    const minY = d3.min(_data,d=> scenarioDisplayMonthly ? d.monthly : d.total);
+    const minY = d3.min(_data,d=> scenarioDisplayMonthly ? d.monthly : d.cummulative);
     const xScale = d3.scaleLinear().domain(d3.extent(_data,d=>d.date)).range([0,width-padding]);
-    const yScale = d3.scaleLinear().domain([minY > 0 ? 0 : minY,d3.max(_data,d=> scenarioDisplayMonthly ? d.monthly : d.total)]).range([height,0]).nice();
+    const yScale = d3.scaleLinear().domain([minY > 0 ? 0 : minY,d3.max(_data,d=> scenarioDisplayMonthly ? d.monthly : d.cummulative)]).range([height,0]).nice();
     const lineGraph = d3.line()
         .x((d)=>{return xScale(d.date);})
-        .y((d)=>{return yScale(scenarioDisplayMonthly ? d.monthly : d.total);});
+        .y((d)=>{return yScale(scenarioDisplayMonthly ? d.monthly : d.cummulative);});
 
     if (lineCanvas) {d3.select("#line-graph").select("svg").remove();}
 
@@ -53,7 +53,7 @@ const renderGraph = (data) =>
         .attr("text-anchor","middle")
         .text("Income ($)")
 
-    const colourScheme = ["black","red","blue","yellow"];
+    const colourScheme = ["green","red","blue","yellow"];
     dataset.map
     (
         (dataGroup,i) =>
@@ -62,6 +62,7 @@ const renderGraph = (data) =>
             lineCanvas.append("path")
                 .datum(dataGroup)
                 .attr("class","line")
+                .attr("fill","none")
                 .attr("stroke",colour)
                 .attr("opacity",0.8)
                 .attr("d",lineGraph);
@@ -71,7 +72,7 @@ const renderGraph = (data) =>
                 .enter()
                 .append("circle")
                 .attr("cx",(d) => xScale(d.date))
-                .attr("cy",(d) => yScale(scenarioDisplayMonthly ? d.monthly : d.total))
+                .attr("cy",(d) => yScale(scenarioDisplayMonthly ? d.monthly : d.cummulative))
                 .attr("fill","none")
                 .attr("stroke","black")
                 .attr("stroke-witdh",2)
@@ -83,7 +84,7 @@ const renderGraph = (data) =>
                 .enter()
                 .append("circle")
                 .attr("cx",(d) => xScale(d.date))
-                .attr("cy",(d) => yScale(scenarioDisplayMonthly ? d.monthly : d.total))
+                .attr("cy",(d) => yScale(scenarioDisplayMonthly ? d.monthly : d.cummulative))
                 .attr("fill",colour)
                 .attr("stroke","grey")
                 .attr("r",2);

@@ -1,23 +1,26 @@
 const allScenario = {};
+let currentScenario;
 
 const addScenario = () =>
 {
     if (currentTraverse && currentTraverse.length > 0)
     {
+        if (Object.keys(allScenario).length >= 5) {return toast("Max scenarios saved")}
+
         const scenarioId = currentTraverse.join(":");
         if (allScenario[scenarioId] == null)
         {
             toast("Scenario added");
             const scenario =
             {
-                "name":`Scenario ${Object.keys(allScenario).length}`,
+                "name":`Scenario ${Object.keys(allScenario).length+1}`,
                 "arg":scenarioId,
                 "scenario":currentTraverse,
                 "action":"loadScenario"
             };
             allScenario[scenarioId] = scenario;
 
-            createScenarioButtons("scenario-bar-saves",[scenario],"scenario-save",Object.keys(allScenario).length-1);
+            createScenarioButtons("scenario-bar-saves-buttons",[scenario],"scenario-save",Object.keys(allScenario).length-1);
         }
         else
         {
@@ -42,6 +45,20 @@ const loadScenario = (scenario) =>
     startReverseTraverse(allScenario[scenario]["scenario"][0]);
 }
 
+const obtainScenarioFinances = (scenario) =>
+{
+    const finances = [];
+    scenario.map
+    (
+        (nodeId) =>
+        {
+            const finance = nodes[nodeId]["finance"];
+            if (finance) finances.push(finance);
+        }
+    )
+    return finances;
+}
+
 const compareScenario = () =>
 {
     if (allScenario.length <= 1) return;
@@ -50,21 +67,10 @@ const compareScenario = () =>
     for (const scenario in allScenario)
     {
         if (scenario == "Whatifi-Saved-Scenario-Header") continue;
-
-        const finances = [];
-        allScenario[scenario]["scenario"].map
-        (
-            (nodeId) =>
-            {
-                const finance = nodes[nodeId]["finance"];
-                if (finance) finances.push(finance);
-            }
-        )
-        compare.push
-        (
-            finances
-        );
+        const finances = obtainScenarioFinances(allScenario[scenario]["scenario"]);
+        if (finances.length > 0) compare.push(finances);
     }
 
+    currentScenario = compare;
     renderGraph(compare);
 }

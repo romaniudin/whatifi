@@ -260,7 +260,6 @@ const createNodeElements = (node) =>
         .text(d=>d.nodeName)
         .attr("text-anchor","middle")
         .attr("y",5);
-    console.log(node.select("text"));
 }
 
 const createNodeShadowElements = (node) =>

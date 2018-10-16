@@ -243,7 +243,6 @@ const flashNode = (nodeId,flash=0) =>
 
 const startReverseTraverse = (nodeId) =>
 {
-    console.log("rev",nodeId);
     currentTraverse = [];
     unhighlightAllNodes(); 
     removeAllLinkTraverse(); 
@@ -273,7 +272,11 @@ const reverseTraverse = (nodeId,traversedNodes) =>
     if (node["parentNodes"].length == 0)
     {
         const finance = findFinancialValues(traversedNodes);
-        if (finance.length > 0) renderGraph([finance]);
+        if (finance.length > 0)
+        {
+            currentScenario = [finance];
+            renderGraph([finance]);
+        }
     }
     else if (node["parentNodes"].length > 1)
     {

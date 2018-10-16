@@ -11,11 +11,11 @@ const toggleScenarioDisplay = () =>
 {
     scenarioDisplayMonthly = !scenarioDisplayMonthly;
     d3.select("#scenario-show_monthly text").text(scenarioDisplayMonthly ? "Show Monthly" : "Show Total");
+    renderGraph(currentScenario);
 }
 
 const renderScenario = () =>
 {
-    allScenario["Whatifi-Saved-Scenario-Header"] = {"name":"Saved Scenarios","action":null,"arg":""};
     renderScenarioActions();
     renderScenarioSaved();
 }
@@ -23,7 +23,6 @@ const renderScenario = () =>
 const renderScenarioActions = () =>
 {
     const actions = [];
-    actions.push({"name":"Actions","action":null,"arg":""});
     actions.push({"name":"Save Scenario","action":"addScenario","arg":""});
     actions.push({"name":"Compare","action":"compareScenario","arg":""});
     actions.push({"name":"Show Monthly","action":"toggleScenarioDisplay","arg":""});
@@ -33,7 +32,8 @@ const renderScenarioActions = () =>
     const actionBar = d3.select("#scenario-bar")
         .append("svg")
         .attr("width","100%")
-        .attr("height",`${buttonHeight+buttonPadding}`);
+        .attr("height",`${buttonHeight+buttonPadding}px`)
+        .attr("id","scenario-bar-actions");
 
     actionBar.append("rect")
         .attr("fill","gainsboro")
@@ -41,22 +41,26 @@ const renderScenarioActions = () =>
         .attr("stroke-width",4)
         .attr("opacity",0.25)
         .attr("height","100%")
-        .attr("width","100%");
+        .attr("width",`${buttonWidth+2*buttonPadding}`);
 
-    actionBar.attr("id","scenario-bar-actions");
+    createScenarioButtons("scenario-bar-actions",[{"name":"Actions","action":null,"arg":""}],"scenario-action");
+    
+    actionBar.append("svg")
+        .attr("id","scenario-bar-actions-buttons")
+        .attr("x",`${buttonWidth+2*buttonPadding}`)
+        .attr("height",buttonHeight+2*buttonPadding);
 
-    createScenarioButtons("scenario-bar-actions",actions,"scenario-action");
+    createScenarioButtons("scenario-bar-actions-buttons",actions,"scenario-action");
 }
 
 const renderScenarioSaved = () =>
 {
     d3.select("#scenario-bar-saves").remove();
 
-    const savedScenarioBar = d3.selectAll("#scenario-bar")
+    const savedScenarioBar = d3.select("#scenario-bar")
         .append("svg")
-        .attr("height",`${buttonHeight+buttonPadding}px`)
-        //.attr("viewBox",`0 0 100% 50`)
         .attr("width","100%")
+        .attr("height",`${buttonHeight+buttonPadding}px`)
         .attr("id","scenario-bar-saves");
 
     savedScenarioBar.append("rect")
@@ -65,14 +69,21 @@ const renderScenarioSaved = () =>
         .attr("stroke-width",4)
         .attr("opacity",0.25)
         .attr("height","100%")
-        .attr("width","100%");
+        .attr("width",`${buttonWidth+2*buttonPadding}`);
+
+    createScenarioButtons("scenario-bar-saves",[{"name":"Saved Scenarios","action":null,"arg":""}],"scenario-action");
+    
+    savedScenarioBar.append("svg")
+        .attr("id","scenario-bar-saves-buttons")
+        .attr("x",`${buttonWidth+2*buttonPadding}`)
+        .attr("height",buttonHeight+2*buttonPadding);
 
     const scenarios = [];
     for (const scenario in allScenario)
     {
         scenarios.push(allScenario[scenario]);
     }
-    createScenarioButtons("scenario-bar-saves",scenarios,"scenario-save");
+    createScenarioButtons("scenario-bar-saves-buttons",scenarios,"scenario-save");
 }
 
 const createScrollButton = () =>
@@ -92,7 +103,7 @@ const createScrollButton = () =>
 const createScenarioButtons = (holder,data,buttonType,offset=0) =>
 {
     const buttonOffset = offset*(buttonWidth+buttonPadding);
-    console.log("offset",offset);
+
     const scenarios = d3.select(`#${holder}`)
         .selectAll(buttonType)
         .data(data)
