@@ -50,7 +50,6 @@ const render = () =>
         .enter()
         .append("g")
         .attr("id",(d) => {return `${d.nodeId}-element`})
-        .attr("onclick",(d) => {return `startReverseTraverse("${d.nodeId}")`})
         .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`})
         .attr("transform",(d)=>{return `translate (${(d.level+0.5)*nodeDistance},${d.x})`});
 
@@ -235,7 +234,8 @@ const createNodeElements = (node) =>
         .attr("r",40)
         .attr("fill","white")
         .attr("stroke",nodeBorderColour)
-        .attr("stroke-width",4);
+        .attr("stroke-width",4)
+        .attr("onclick",(d) => {return `startReverseTraverse("${d.nodeId}")`});
 
     node.append("circle")
         .attr("class","img-node")
@@ -244,7 +244,44 @@ const createNodeElements = (node) =>
         .attr("stroke",nodeBorderColour)
         .attr("stroke-width",4)
         .attr("cx","30")
-        .attr("cy","-30");
+        .attr("cy","-30")
+        .attr("onclick",(d) => {return `nodeOptions("${d.nodeId}")`});
+
+    node.append("circle")
+        .attr("r",8)
+        .attr("fill",nodeBorderColour)
+        .attr("cx",`${nodeDistance/2}`)
+        .attr("opacity",(d)=>{if (d.type=="group") return 1;else return 0;});
+
+    const plusThickness = 2;
+    const plusHeight = 8;
+    node.append("rect")
+        .attr("fill","white")
+        .attr("stroke","white")
+        .attr("stroke-width",2)
+        .attr("width",plusThickness)
+        .attr("height",plusHeight)
+        .attr("x",`${nodeDistance/2-plusThickness/2}`)
+        .attr("y",`-${plusHeight/2}`)
+        .attr("opacity",(d)=>{if (d.type=="group") return 1;else return 0;});
+
+    node.append("rect")
+        .attr("fill","white")
+        .attr("stroke","white")
+        .attr("stroke-width",2)
+        .attr("width",plusHeight)
+        .attr("height",plusThickness)
+        .attr("x",`${nodeDistance/2-plusHeight/2}`)
+        .attr("y",`-${plusThickness/2}`)
+        .attr("opacity",(d)=>{if (d.type=="group") return 1;else return 0;});
+
+    node.append("circle")
+        .attr("class","add-node")
+        .attr("r",8)
+        .attr("fill","white")
+        .attr("cx",`${nodeDistance/2}`)
+        .attr("opacity",(d)=>{if (d.type=="group") return 0.25;else return 0;})
+        .attr("onclick",(d) => {if (d.type=="group") return `addNewNodeTo("${d.nodeId}")`;else return ""});
 /*
     const dummyText = node.append("text")
         .text(d=>d.nodeName)
@@ -283,6 +320,14 @@ const createNodeShadowElements = (node) =>
         .attr("stroke-width",5)
         .attr("cx","32")
         .attr("cy","-28");
+
+    node.append("circle")
+        .attr("class","add-node-shadow")
+        .attr("r",8)
+        .attr("fill","black")
+        .attr("cx",`${nodeDistance/2+1}`)
+        .attr("cy",1)
+        .attr("opacity",(d)=>{if (d.type=="group") return 0.25;else return 0;});
 }
 
 const createLinkElements = (link) =>

@@ -9,7 +9,8 @@ const nodeTypes =
     "person",
     "expense",
     "income",
-    "location"
+    "location",
+    "group",
 ];
 
 const isParent = (nodeId,possibleParentId) =>
@@ -35,8 +36,9 @@ const isParent = (nodeId,possibleParentId) =>
     return false;
 }
 
-const addChild = (nodeId,parentNodeId) =>
+const addChild = (nodeId,parentNodeId,inherit=false,setInherit=false) =>
 {
+    console.log("adding",nodeId,"to",parentNodeId);
     if (isParent(nodeId,parentNodeId))
     {
         return;
@@ -52,16 +54,43 @@ const addChild = (nodeId,parentNodeId) =>
 
     parentNode["childrenNodes"].push(nodeId);
     node["parentNodes"].push(parentNodeId);
+    node["level"] = parentNode["level"]+1;
 
-    const diff = parentNode["level"]+1 - node["level"];
-    if (diff > 0)
+    if (setInherit)
     {
-        traverse(nodeId,null,null,
-            (node) =>
-            {
-                node["level"] += diff;
-            }
-        );
+        parentNode["toInherit"] = nodeId;
+    }
+    if (inherit && parentNode.toInherit)
+    {
+        const inheritNode = nodes[parentNode.toInherit];
+        const inheritIndex = parentNode["childrenNodes"].indexOf(parentNode["toInherit"]);
+
+        const oldParentIndex = inheritNode.parentNodes.indexOf(parentNodeId);
+        if (oldParentIndex != -1)
+        {
+            inheritNode.parentNodes.splice(oldParentIndex,1);
+        }
+
+        node.childrenNodes.push(parentNode.toInherit);
+        inheritNode.parentNodes.push(nodeId);
+
+        if (inheritIndex != -1)
+        {
+            parentNode["childrenNodes"].splice(inheritIndex,1);
+        }
+
+        if (inheritNode.level == node.level)
+        {
+            traverse
+            (
+                inheritNode.nodeId,
+                null,null,
+                (traverseNode) =>
+                {
+                    traverseNode["level"] += 1;
+                }
+            );
+        }
     }
 }
 
@@ -90,6 +119,8 @@ const addNode = (nodeName,nodeType,nodeDetails) =>
         "childrenNodes":[],
         "selected":false,
         "highlighted":false,
+        "toInherit":null,
+        "type":nodeType,
     };
 
     for (let key in nodeDetails)
@@ -101,6 +132,13 @@ const addNode = (nodeName,nodeType,nodeDetails) =>
     nodes[nodeId] = node;
 
     return nodeId;
+}
+
+const addNewNodeTo = (nodeId) =>
+{
+    const node = addNode("test","income");
+    addChild(node,nodeId,true);
+    render();
 }
 
 const tree = (nodeId) =>
@@ -249,6 +287,12 @@ const startReverseTraverse = (nodeId) =>
     reverseTraverse(nodeId,currentTraverse);
 }
 
+const nodeOptions = (nodeId) =>
+{
+    const node = nodes[nodeId];
+    console.log("options on",node);
+}
+
 const findFinancialValues = (allNodes) =>
 {
     const allFinances = []
@@ -266,10 +310,17 @@ const findFinancialValues = (allNodes) =>
 const reverseTraverse = (nodeId,traversedNodes) =>
 {
     const node = nodes[nodeId];
+    console.log("traverseing",nodeId,node);
     highlightNode(nodeId);
     selectNode(nodeId);
     traversedNodes.push(nodeId);
-    if (node["parentNodes"].length == 0)
+    if (node.type == "group" && ((node.childrenNodes.length == 1 && nodes[node.childrenNodes[0]].type == "group") || node.childrenNodes.length == 0))
+    {
+        traversedNodes = [];
+        toast("Please add node to the group (+ button to the right)");
+        flashNode(nodeId);
+    }
+    else if (node["parentNodes"].length == 0)
     {
         const finance = findFinancialValues(traversedNodes);
         if (finance.length > 0)
