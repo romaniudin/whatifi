@@ -57,6 +57,7 @@ const render = () =>
 
     createLinkElements(linkPlacements);
     createNodeElements(nodePlacements);
+    createNodeAddOverlay("node-graph-viewbox");
 }
 
 let lastValidZoom = 1;
@@ -244,8 +245,8 @@ const createNodeElements = (node) =>
         .attr("stroke",nodeBorderColour)
         .attr("stroke-width",4)
         .attr("cx","30")
-        .attr("cy","-30")
-        .attr("onclick",(d) => {return `nodeOptions("${d.nodeId}")`});
+        .attr("cy","-30");
+        //.on("click",(d) => {nodeOverlayAdd(d)});
 
     node.append("circle")
         .attr("r",8)
@@ -281,7 +282,7 @@ const createNodeElements = (node) =>
         .attr("fill","white")
         .attr("cx",`${nodeDistance/2}`)
         .attr("opacity",(d)=>{if (d.type=="group") return 0.25;else return 0;})
-        .attr("onclick",(d) => {if (d.type=="group") return `addNewNodeTo("${d.nodeId}")`;else return ""});
+        .attr("onclick",(d) => {if (d.type=="group") return `nodeOverlayAdd("${d.nodeId}")`;else return ""});
 /*
     const dummyText = node.append("text")
         .text(d=>d.nodeName)
@@ -342,4 +343,165 @@ const createLinkElements = (link) =>
         .attr("y1",(d) => {return d.x1;})
         .attr("x2",(d) => {return d.y2;})
         .attr("y2",(d) => {return d.x2;});
+}
+
+const removeNodeAddOverlay = () =>
+{
+    d3.select("#node-add-overlay div").remove();
+}
+
+const createNodeAddOverlay = (containerId) =>
+{
+    removeNodeAddOverlay();
+
+    d3.select("#node-graph")
+        .append("div") 
+        .attr("id","node-add-overlay")
+        .attr("class", "tooltip")               
+        .style("position", "absolute")               
+        .style("background", "lightgrey")               
+        .style("opacity", 0)
+        .style("padding", "0 10px 0 10px")
+        .style("border","2px solid darkgrey")
+        .style("border-radius","5px")
+        .style("left","10px")
+        .style("top","10px")
+        .append("div");
+}
+
+const submitNewNode = (parentNodeId) =>
+{
+    const nodeName = document.getElementById("add-node-name-input").value;
+    const nodeValue = document.getElementById("add-node-value-input").value;
+    const nodePeriod = document.getElementById("add-node-period-input").value;
+    const nodeStart = document.getElementById("add-node-start-input").value;
+    const nodeEnd = document.getElementById("add-node-end-input").value;
+
+    let valid = true;
+
+    if (!nodeName || nodeName == "")
+    {
+        valid &= false;
+        toast("Please enter node name");
+    }
+    if (!nodeValue || nodeValue == "")
+    {
+        valid &= false;
+        toast("Please enter value");
+    }
+    if (!nodePeriod || nodePeriod == "" || nodePeriod < 0)
+    {
+        valid &= false;
+        toast("Please enter period, must be > 0");
+    }
+    if (!nodeStart || nodeStart == "" || nodeStart < 0)
+    {
+        valid &= false;
+        toast("Please enter start date, must be > 0");
+    }
+    if (!nodeEnd || nodeEnd == "" || nodeEnd < 0 || nodeStart > nodeEnd)
+    {
+        valid &= false;
+        toast("Please enter end date, must be (>0) and (>=start date)");
+    }
+
+    if (valid)
+    {
+        addNewNodeTo
+        (
+            parentNodeId,
+            nodeName,
+            "income",
+            {
+                "finance":
+                {
+                    "value":nodeValue,
+                    "start":nodeStart,
+                    "end":nodeEnd,
+                    "period":nodePeriod,
+                }
+            }
+        );
+    }
+}
+
+const nodeOverlayAdd = (nodeId) =>
+{
+    removeNodeAddOverlay();
+
+    const node = nodes[nodeId];
+    d3.select("#node-add-overlay div").remove();
+    const div = d3.select("#node-add-overlay")
+        .style("opacity",0.95)
+        .append("div");
+
+    div.append("h5").text(`Group: ${node.nodeName}`);
+
+    div.append("div")
+        .text("Node name:")
+        .append("input")
+        .attr("id","add-node-name-input")
+        .attr("type","text");
+
+    div.append("div")
+        .text("Value:")
+        .append("input")
+        .attr("id","add-node-value-input")
+        .attr("type","number");
+
+    div.append("div")
+        .text("Period (Month):")
+        .append("input")
+        .attr("id","add-node-period-input")
+        .attr("type","number");
+
+    div.append("div")
+        .text("Start Date:")
+        .append("input")
+        .attr("id","add-node-start-input")
+        .attr("type","number");
+        //.attr("type","date");
+
+    div.append("div")
+        .text("End Date:")
+        .append("input")
+        .attr("id","add-node-end-input")
+        .attr("type","number");
+        //.attr("type","date");
+
+    const buttons = div.append("div");
+
+    buttons.append("div")
+        .attr("id","add-node-submit-input")
+        .attr("align","middle")
+        .style("margin","5px")
+        .style("background","white")
+        .style("border","2px darkgrey solid")
+        .style("border-radius","5px")
+        .text("Add Node")
+        .on
+        (
+            "click",
+            () =>
+            {
+                submitNewNode(nodeId);
+            }
+        );
+
+    buttons.append("div")
+        .attr("id","add-node-cancel-input")
+        .attr("align","middle")
+        .style("margin","5px")
+        .style("background","white")
+        .style("border","2px darkgrey solid")
+        .style("border-radius","5px")
+        .on
+        (
+            "click",
+            () =>
+            {
+                removeNodeAddOverlay();
+            }
+        )
+        .text("Cancel");
 }

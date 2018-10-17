@@ -38,7 +38,6 @@ const isParent = (nodeId,possibleParentId) =>
 
 const addChild = (nodeId,parentNodeId,inherit=false,setInherit=false) =>
 {
-    console.log("adding",nodeId,"to",parentNodeId);
     if (isParent(nodeId,parentNodeId))
     {
         return;
@@ -134,10 +133,10 @@ const addNode = (nodeName,nodeType,nodeDetails) =>
     return nodeId;
 }
 
-const addNewNodeTo = (nodeId) =>
+const addNewNodeTo = (parentId,nodeName,type,nodeDetails) =>
 {
-    const node = addNode("test","income");
-    addChild(node,nodeId,true);
+    const node = addNode(nodeName,type,nodeDetails);
+    addChild(node,parentId,true);
     render();
 }
 
@@ -290,7 +289,6 @@ const startReverseTraverse = (nodeId) =>
 const nodeOptions = (nodeId) =>
 {
     const node = nodes[nodeId];
-    console.log("options on",node);
 }
 
 const findFinancialValues = (allNodes) =>
@@ -310,7 +308,6 @@ const findFinancialValues = (allNodes) =>
 const reverseTraverse = (nodeId,traversedNodes) =>
 {
     const node = nodes[nodeId];
-    console.log("traverseing",nodeId,node);
     highlightNode(nodeId);
     selectNode(nodeId);
     traversedNodes.push(nodeId);
