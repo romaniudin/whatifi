@@ -6,9 +6,11 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
         <script src="https://d3js.org/d3.v5.min.js"></script>
         <script src="scripts/components.js"></script>
+        <script src="scripts/scheme.js"></script>
         <script src="scripts/index.js"></script>
         <script src="scripts/nodes.js"></script>
         <script src="scripts/d3NodeHelper.js"></script>
+        <script src="scripts/d3NodeOverlay.js"></script>
         <script src="scripts/d3LineHelper.js"></script>
         <script src="scripts/d3ScenarioHelper.js"></script>
         <script src="scripts/scenario.js"></script>
@@ -52,67 +54,7 @@
 
             const childcare = addNode("Child care","group");
             addChild(childcare,transportation,false,true);
-/*
-            const daycare = addNode("Daycare","income",{"finance":{"value":-1500,"start":24,"end":48,"period":12}});
-            addChild(daycare,childcare,true);
-            const nanny = addNode("Nanny","income",{"finance":{"value":-3000,"start":0,"end":48,"period":1}});
-            addChild(nanny,childcare,true);
 
-            const tax = addNode("Tax credit","income",{"finance":{"value":5000,"start":0,"end":60,"period":12}});
-            addChild(tax,daycare);
-            addChild(tax,nanny);*/
-/*            let city = addNode("Vancouver","location");
-            addChild(city,me);
-
-                let job = addNode("DMG","income");
-                addChild(job,city);
-
-                    let transportation = addNode("Transportation","expense");
-                    addChild(transportation,job);
-                    let transit = addNode
-                    (
-                        "Transit",
-                        "expense",
-                        {
-                            "finance":
-                            {
-                                "rate":"monthly",
-                                "value":100
-                            }
-                        }
-                    );
-                    addChild(transit,transportation);
-
-                    let car = addNode("Car","expense");
-                    addChild(car,transportation);
-
-                        let option = addNode("Civic","expense");
-                        addChild(option,car);
-                        option = addNode("Toyota","expense");
-                        addChild(option,car);
-                        option = addNode("Lexus","expense");
-                        addChild(option,car);
-                        //addChild(addNode("NX-300","expense"),option);
-                        //addChild(addNode("IS-350","expense"),option);
-
-                job = addNode("Fortinet","income");
-                addChild(job,city);
-                    addChild(transportation,job);
-
-                job = addNode("Sophos","income");
-                addChild(job,city);
-                    addChild(transportation,job);
-            city = addNode("New York","location");
-            addChild(city,me);
-
-                job = addNode("MasterCard","income");
-                addChild(job,city);
-
-                    transportation = addNode("Transportation","expense");
-                    addChild(transportation,job);
-                    addChild(addNode("Transit","expense"),transportation);
-                    addChild(addNode("Uber","expense"),transportation);
-*/
             render();
             renderScenario();
 

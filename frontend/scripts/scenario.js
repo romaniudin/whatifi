@@ -59,7 +59,7 @@ const obtainScenarioFinances = (scenario) =>
     return finances;
 }
 
-const compareScenario = () =>
+const compareSaved = () =>
 {
     if (allScenario.length <= 1) return;
     const compare = [];

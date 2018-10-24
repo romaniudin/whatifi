@@ -1,7 +1,13 @@
 let lineCanvas;
 let liveData;
-const renderGraph = (data) =>
+const renderGraph = (request) =>
 {
+    const data = [];
+    request.map
+    (
+        option => {if (option.length > 0) data.push(option)}
+    );
+    console.log("rendering",data);
     if (data==null || data.length == 0) return;
 
     liveData = data;
@@ -12,9 +18,27 @@ const renderGraph = (data) =>
     const width = 500;
     const height = 300;
 
-    const minY = d3.min(_data,d=> scenarioDisplayMonthly ? d.monthly : d.cummulative);
     const xScale = d3.scaleLinear().domain(d3.extent(_data,d=>d.date)).range([0,width-padding]);
-    const yScale = d3.scaleLinear().domain([minY > 0 ? 0 : minY,d3.max(_data,d=> scenarioDisplayMonthly ? d.monthly : d.cummulative)]).range([height,0]).nice();
+
+    const minY = d3.min
+    (
+        dataset,
+        traversePath => 
+        {
+            return d3.min(traversePath,d=> scenarioDisplayMonthly ? d.monthly : d.cummulative)
+        }
+    );
+
+    const maxY = d3.max
+    (
+        dataset,
+        traversePath => 
+        {
+            return d3.max(traversePath,d=> scenarioDisplayMonthly ? d.monthly : d.cummulative)
+        }
+    );
+
+    const yScale = d3.scaleLinear().domain([minY > 0 ? 0 : minY, maxY < 0 ? 0 : maxY]).range([height,0]).nice();
     const lineGraph = d3.line()
         .x((d)=>{return xScale(d.date);})
         .y((d)=>{return yScale(scenarioDisplayMonthly ? d.monthly : d.cummulative);});
@@ -32,7 +56,12 @@ const renderGraph = (data) =>
     lineCanvas.append("g")
         .attr("class","x-axis")
         .attr("transform",`translate(0,${yScale(0)})`)
-        .call(d3.axisBottom(xScale));
+        .call(d3.axisBottom(xScale).tickFormat(d3.timeFormat("%Y-%m")))
+        .selectAll("text")
+        .style("text-anchor", "end")
+        .attr("dx", "-.8em")
+        .attr("dy", ".15em")
+        .attr("transform", "rotate(-45)");
 
     lineCanvas.append("text")
         .attr("class","x-label")
@@ -96,32 +125,54 @@ const renderGraph = (data) =>
 const formatDataset = (data) =>
 {
     const dataset = [];
+    const now = new Date();
     data.map
     (
         (dataGroup,group) =>
         {
             dataset.push([]);
             let total = 0;
-            for (let i = 0; i < d3.max(dataGroup,d=>d.end); i++)
+            let currentDate = new Date(now.getFullYear(),now.getMonth()+1,0);
+            let maxDate = d3.max
+            (
+                dataGroup,
+                d =>
+                {
+                    if (!d.end || d.end == 0 || d.end =="")
+                    {
+                        return new Date(now.getFullYear()+5,now.getMonth()+1,0);
+                    }
+
+                    let endDate = new Date(d.end+"-02"); //second day of the month to elim timezone
+                    return new Date(endDate.getFullYear(),endDate.getMonth()+1,0);
+                }
+            )
+
+            for (let i = 1; currentDate <= maxDate; i++)
             {
                 let monthly = 0;
                 dataGroup.map
                 (
                     (d) =>
                     {
+                        let startDate = new Date(d.start+"-02"); //second day of the month to elim timezone
+                        startDate = new Date(startDate.getFullYear(),startDate.getMonth()+1,0); 
+                        let endDate = new Date(d.end+"-02");
+                        endDate = d.end ? new Date(endDate.getFullYear(),endDate.getMonth()+1,0) : null; 
+
                         if 
                         (
-                            d &&
-                            (d.start == null || d.start <= i) && 
-                            (d.end == null || d.end >= i)
+                            (startDate <= currentDate) && 
+                            (endDate == null || endDate >= currentDate)
                         )
                         {
-                            monthly += (d.value/d.period);
-                            total += (d.value/d.period);
+                            monthly += (d.value/d.frequency);
+                            total += (d.value/d.frequency);
                         }
                     }
                 );
-                dataset[group].push({"monthly":monthly,"cummulative":total,"date":i});
+                dataset[group].push({"monthly":monthly,"cummulative":total,"date":currentDate});
+                currentDate = new Date(now.getFullYear(),now.getMonth()+1+i,0);
             }
         }
     );
