@@ -226,6 +226,7 @@ const updateNodeSelected = (nodeId,selected) =>
 const onClickAction = (nodeId) =>
 {
     console.log("click",nodeId,event);
+    return generateNodeMenu(nodeId);
     const node = nodes[nodeId];
     if (node.type == "group")
     {
