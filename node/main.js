@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
 
-const {loginAPI,createAccountAPI,validItemsAPI,getItemsAPI,saveItemAPI,updateItemAPI} = require("./api");
+const {loginAPI,createAccountAPI,validItemsAPI,getItemsAPI,saveItemAPI,updateItemAPI,deleteItemAPI} = require("./api");
 const {setCorsHeaders,middlewareError,decodeToken} = require("./apiHelper");
 const {verifyLogin} = require("./account");
 const {validItemTypes,verifyItem} = require("./items");
@@ -28,5 +28,6 @@ app.use("/item/:account",setCorsHeaders);
 app.use("/item/:account",bodyParser.json(),parseErrorHandler);
 app.post("/item/:account",decodeToken,saveItemAPI);
 app.put("/item/:account",decodeToken,updateItemAPI);
+app.delete("/item/:account",decodeToken,deleteItemAPI);
 
 app.listen(apiPort, () => console.log(`listening to port ${apiPort}`));

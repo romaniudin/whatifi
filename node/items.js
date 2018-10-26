@@ -2,11 +2,13 @@ const {async_collection} = require("./apiHelper");
 
 const checkRequired = (item,type,required) =>
 {
+    console.log(item,type,required);
     const missing = [];
 
+    const allKeys = Object.keys(item);
     for (let i in required)
     {
-        if (item[required[i]] == null)
+        if (allKeys.indexOf(required[i]) == -1)
         {
             missing.push(required[i]);
         }
@@ -16,6 +18,7 @@ const checkRequired = (item,type,required) =>
     {
         throw {
             "success":false,
+            "internal":true,
             "status":400,
             "message":"Missing "+type+" details",
             "info":missing
@@ -27,7 +30,7 @@ const checkRequired = (item,type,required) =>
 
 const verifyScenario = (item) =>
 {
-    checkRequired(item,"scenario",["identifier","nodes"]);
+    checkRequired(item,"scenario",["identifier","items"]);
 }
 
 const verifyIncome = (item) =>
@@ -54,9 +57,63 @@ const itemVerification =
 }
 const validItemTypes = Object.keys(itemVerification);
 
+const deleteItem = async (account,query) =>
+{
+    const type = query["type"];
+    const identifier = query["identifier"];
+    console.log(`[Delete Items] ${account}: ${JSON.stringify(query)}`);
+
+    if (!type || itemVerification[type] == null)
+    {
+        console.log(`[Delete error] Invalid type: ${type}`);
+        return {
+            "success":false,
+            "internal":true,
+            "status":400,
+            "message":"Invalid item type: "+type
+        };
+    }
+
+    if (!identifier || identifier == "")
+    {
+        console.log(`[Delete error] No identifier ${identifier}`);
+        return {
+            "success":false,
+            "internal":true,
+            "status":400,
+            "message":"No identifier"
+        };
+    }
+
+
+    try
+    {
+        const collection = await async_collection(type);
+        await collection.remove({"account":account,"identifier":identifier});
+        console.log(`[Delete] Successful - account:${account} type:${type} identifier:${identifier}`);
+        return {
+            "success":true,
+            "internal":true,
+            "status":200,
+            "message":"Delete success"
+        };
+    }
+    catch (e)
+    {
+        console.log(`[Delete error] ${e}`);
+        return {
+            "success":false,
+            "internal":true,
+            "status":400,
+            "message":"Delete error"
+        };
+    }
+}
+
 const getItems = async (account,query) =>
 {
     const type = query["type"];
+    console.log(`[Get Items] ${account}: ${JSON.stringify(query)}`);
 
     if (type && type != "all" && itemVerification[type] == null)
     {
@@ -77,7 +134,7 @@ const getItems = async (account,query) =>
     for(let i in allCollections)
     {
         const collection = await async_collection(allCollections[i]);
-        const items = collection.find({"account":account}).toArray();
+        const items = await collection.find({"account":account}).toArray();
         collections[allCollections[i]] = items;
     }
 
@@ -86,7 +143,14 @@ const getItems = async (account,query) =>
     {
         try
         {
-            const items = await collections[i];
+            const identifier = query["identifier"];
+            const items = collections[i];
+
+            if (identifier && items["identifier"] != identifier)
+            {
+                continue;
+            }
+
             allItems[i] = items;
         }
         catch (error)
@@ -130,16 +194,24 @@ const saveItem = async (item,account,update) =>
 
         return {
             "success":true,
+            "internal":true,
             "status":200,
             "message":update ? "Item updated" : "Item saved"
         }
     }
     catch (error)
     {
+        console.log(error);
+        if (error.internal)
+        {
+            throw error;
+        }
+
         if (item == null)
         {
             throw {
                 "success":false,
+                "internal":true,
                 "status":400,
                 "message": "Received empty/null item"
             }
@@ -148,6 +220,7 @@ const saveItem = async (item,account,update) =>
         {
             throw {
                 "success":false,
+                "internal":true,
                 "status":400,
                 "message": update ? "Item does not exist for account" : "Item already exists for account"
             }
@@ -163,8 +236,19 @@ const verifyItem = async (item) =>
     {
         throw {
             "success":false,
+            "internal":true,
             "status":400,
             "message":"Invalid item type: "+type
+        }
+    }
+
+    if (!item.details)
+    {
+        throw {
+            "success":false,
+            "internal":true,
+            "status":400,
+            "message":"Item details missing"
         }
     }
 
@@ -179,4 +263,4 @@ const verifyItem = async (item) =>
     }
 }
 
-module.exports = {validItemTypes,getItems,saveItem}
+module.exports = {validItemTypes,getItems,saveItem,deleteItem}
