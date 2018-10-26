@@ -9,7 +9,8 @@ const nodeTypes =
     "person",
     "expense",
     "income",
-    "location"
+    "location",
+    "group",
 ];
 
 const isParent = (nodeId,possibleParentId) =>
@@ -35,7 +36,7 @@ const isParent = (nodeId,possibleParentId) =>
     return false;
 }
 
-const addChild = (nodeId,parentNodeId) =>
+const addChild = (nodeId,parentNodeId,inherit=false,setInherit=false) =>
 {
     if (isParent(nodeId,parentNodeId))
     {
@@ -52,16 +53,69 @@ const addChild = (nodeId,parentNodeId) =>
 
     parentNode["childrenNodes"].push(nodeId);
     node["parentNodes"].push(parentNodeId);
-
-    const diff = parentNode["level"]+1 - node["level"];
-    if (diff > 0)
+    node["level"] = parentNode["level"]+1;
+/*
+    const levelNodes = [];
+    for (const nodeId in nodes)
     {
-        traverse(nodeId,null,null,
-            (node) =>
+        const currentNode = nodes[nodeId];
+        if (currentNode.level == node.level)
+        {
+            levelNodes.push(currentNode);
+        }
+    }
+
+    levelNodes.sort
+    (
+        (a,b) =>
+        {
+            if (a.level == b.level)
             {
-                node["level"] += diff;
+                return 0;
             }
-        );
+
+            return a.level > b.level ? 1 : -1;
+        }
+    )
+
+    levelNodes.shift(node);
+    balanceLevel(levelNodes);*/
+
+    if (setInherit)
+    {
+        parentNode["toInherit"] = nodeId;
+    }
+    if (inherit && parentNode.toInherit)
+    {
+        const inheritNode = nodes[parentNode.toInherit];
+        const inheritIndex = parentNode["childrenNodes"].indexOf(parentNode["toInherit"]);
+
+        const oldParentIndex = inheritNode.parentNodes.indexOf(parentNodeId);
+        if (oldParentIndex != -1)
+        {
+            inheritNode.parentNodes.splice(oldParentIndex,1);
+        }
+
+        node.childrenNodes.push(parentNode.toInherit);
+        inheritNode.parentNodes.push(nodeId);
+
+        if (inheritIndex != -1)
+        {
+            parentNode["childrenNodes"].splice(inheritIndex,1);
+        }
+
+        if (inheritNode.level == node.level)
+        {
+            traverse
+            (
+                inheritNode.nodeId,
+                null,null,
+                (traverseNode) =>
+                {
+                    traverseNode["level"] += 1;
+                }
+            );
+        }
     }
 }
 
@@ -90,6 +144,8 @@ const addNode = (nodeName,nodeType,nodeDetails) =>
         "childrenNodes":[],
         "selected":false,
         "highlighted":false,
+        "toInherit":null,
+        "type":nodeType,
     };
 
     for (let key in nodeDetails)
@@ -101,6 +157,24 @@ const addNode = (nodeName,nodeType,nodeDetails) =>
     nodes[nodeId] = node;
 
     return nodeId;
+}
+
+const updateNodeDetails = (nodeId,nodeDetails) =>
+{
+    const node = nodes[nodeId];
+    for (const detail in nodeDetails)
+    {
+        node[detail] = nodeDetails[detail];
+    }
+
+    d3.select(`#${nodeId}-element .node-name`).text(node.nodeName);
+}
+
+const addNewNodeTo = (parentId,nodeName,type,nodeDetails) =>
+{
+    const node = addNode(nodeName,type,nodeDetails);
+    addChild(node,parentId,true);
+    render(false);
 }
 
 const tree = (nodeId) =>
@@ -197,7 +271,7 @@ const unselectAllNodes = () =>
         }
     );
     selectedNodes = [];
-    render();
+    render(false);
 }
 
 let highlightedNodes = [];
@@ -249,6 +323,11 @@ const startReverseTraverse = (nodeId) =>
     reverseTraverse(nodeId,currentTraverse);
 }
 
+const nodeOptions = (nodeId) =>
+{
+    const node = nodes[nodeId];
+}
+
 const findFinancialValues = (allNodes) =>
 {
     const allFinances = []
@@ -263,13 +342,57 @@ const findFinancialValues = (allNodes) =>
     return allFinances;
 }
 
+const compareChildNodes = (nodeId) =>
+{
+    const finances = [];
+    const node = nodes[nodeId];
+
+    console.log(node);
+    if (node.childrenNodes.length == 1 && nodes[node.childrenNodes[0]].type == "group")
+    {
+        flashNode(nodeId);
+        return toast("Please add at least one node");
+    }
+
+    node.childrenNodes.map
+    (
+        (childNodeId) =>
+        {
+            flashNode(childNodeId);
+        }
+    );
+
+    node.childrenNodes.map
+    (
+        (childNodeId) =>
+        {
+            finances.push(findFinancialValues([childNodeId]));
+        }
+    );
+
+    renderGraph(finances);
+}
+
 const reverseTraverse = (nodeId,traversedNodes) =>
 {
     const node = nodes[nodeId];
     highlightNode(nodeId);
     selectNode(nodeId);
     traversedNodes.push(nodeId);
-    if (node["parentNodes"].length == 0)
+    if
+    (
+        node.type == "group" && 
+        (
+            (node.childrenNodes.length == 1 && nodes[node.childrenNodes[0]].type == "group") || 
+            node.childrenNodes.length == 0
+        )
+    )
+    {
+        traversedNodes = [];
+        toast("Please add node to the group (+ button to the right)");
+        flashNode(nodeId);
+    }
+    else if (node["parentNodes"].length == 0)
     {
         const finance = findFinancialValues(traversedNodes);
         if (finance.length > 0)
@@ -311,25 +434,68 @@ const reverseTraverse = (nodeId,traversedNodes) =>
     }
 }
 
-const generateNode = (nodeId) =>
+const startForwardTraverse = (nodeId) =>
 {
-    let html = "<div id=\"node-root-"+nodeId+"\" class=\"node-root\" ondrop=\"drop(event)\" ondragover=\"allowDrop(event)\" draggable=\"true\" ondragstart=\"drag(event)\"><table><tbody><tr>";
-
     const node = nodes[nodeId];
+    if ( node.type != "me" ) return;
 
-    html += "<td><div id=\"node-name-"+nodeId+"\" class=\"node-name\" style=\"border:1px solid black\">";
-    html += node["nodeName"];
-    html += "</td></div>";
+    const forwardTraverseNodes = [[nodeId]];
+    forwardTraverse(nodeId,forwardTraverseNodes);
+    const allOptions = joinForwardTraverse(forwardTraverseNodes);
+    const allFinances = [];
+    allOptions.map
+    (
+        option =>
+        {
+            allFinances.push(findFinancialValues(option));
+        }
+    );
+    renderGraph(allFinances);
+}
 
-    html += "<td><div id=\"node-children-"+nodeId+"\" class=\"node-children\">";
+const forwardTraverse = (nodeId,traversedNodes,currentLevel=0) =>
+{
+    const node = nodes[nodeId];
+    if (traversedNodes.length <= currentLevel+1) {traversedNodes.push([])}
 
-    for (let i in node["childrenNodes"])
+    node.childrenNodes.map
+    (
+        (childNode) =>
+        {
+            if (traversedNodes[currentLevel+1].indexOf(childNode) == -1)
+            {
+                traversedNodes[currentLevel+1].push(childNode);
+            }
+        }
+    )
+
+    traversedNodes[currentLevel+1].map
+    (
+        nodeId => forwardTraverse(nodeId,traversedNodes,currentLevel+1)
+    );
+}
+
+const joinForwardTraverse = (forwardTraverse) =>
+{
+    let currentLevel = [forwardTraverse[0]];
+    for (let i = 1; i < forwardTraverse.length-1; i++)
     {
-        html += generateNode(nodes[node["childrenNodes"][i]]["nodeId"]);
+        currentLevel = joinNextLevel(currentLevel,forwardTraverse[i]);
     }
+    return currentLevel;
+}
 
-    html += "</td><div>";
-
-    html += "</tr></tbody></table></div>";
-    return html;
+const joinNextLevel = (traverse,nextLevel) =>
+{
+    const allJoins = [];
+    for (const j in nextLevel)
+    {
+        for (const i in traverse)
+        {
+            const option = traverse[i].slice();
+            option.push(nextLevel[j]);
+            allJoins.push(option);
+        }
+    }
+    return allJoins.length > 0 ? allJoins : traverse;
 }

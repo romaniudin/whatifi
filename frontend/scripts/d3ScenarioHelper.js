@@ -24,7 +24,7 @@ const renderScenarioActions = () =>
 {
     const actions = [];
     actions.push({"name":"Save Scenario","action":"addScenario","arg":""});
-    actions.push({"name":"Compare","action":"compareScenario","arg":""});
+    actions.push({"name":"Compare Saves","action":"compareScenario","arg":""});
     actions.push({"name":"Show Monthly","action":"toggleScenarioDisplay","arg":""});
 
     d3.select("#scenario-bar-actions").remove();
