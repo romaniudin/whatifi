@@ -110,17 +110,32 @@ const generateNodeMenuItem = (container,text,action,offset) =>
 
 const generateNodeMenu_toggle = (container,nodeId,offset=0) =>
 {
-    generateNodeMenuItem(container,"Toggle Selection",`console.log(\"toggle ${nodeId}\")`,offset);
+    generateNodeMenuItem(container,"Toggle Selection",`toggleSelectNode(\"${nodeId}\");nodeMenuCloseAll();`,offset);
 }
 
 const generateNodeMenu_traverse = (container,nodeId,offset=0) =>
 {
-    generateNodeMenuItem(container,"Traverse From",`console.log(\"traverse ${nodeId}\")`,offset);
+    generateNodeMenuItem(container,"Traverse From",`startReverseTraverse(\"${nodeId}\");nodeMenuCloseAll();`,offset);
+}
+
+const generateNodeMenu_traverseAll = (container,nodeId,offset=0) =>
+{
+    generateNodeMenuItem(container,"Show All Options",`startForwardTraverse(\"${nodeId}\");nodeMenuCloseAll();`,offset);
 }
 
 const generateNodeMenu_compareChildren = (container,nodeId,offset=0) =>
 {
-    generateNodeMenuItem(container,"Compare group",`console.log(\"compare child nodes ${nodeId}\")`,offset);
+    generateNodeMenuItem(container,"Compare Group",`compareChildNodes(\"${nodeId}\");nodeMenuCloseAll();`,offset);
+}
+
+const generateNodeMenu_editDetails = (container,nodeId,offset=0) =>
+{
+    generateNodeMenuItem(container,"Edit Details",`onContextMenu(\"${nodeId}\");nodeMenuCloseAll();`,offset);
+}
+
+const closeAll = () =>
+{
+    nodeMenuCloseAll();
 }
 
 const nodeMenuCloseAll = () =>
@@ -130,7 +145,7 @@ const nodeMenuCloseAll = () =>
 
 const nodeMenuGenerator =
 {
-    "me":[generateNodeMenu_toggle,generateNodeMenu_traverse],
-    "group":[generateNodeMenu_toggle,generateNodeMenu_traverse,generateNodeMenu_compareChildren],
-    "default":[generateNodeMenu_toggle,generateNodeMenu_traverse],
+    "me":[generateNodeMenu_traverseAll,generateNodeMenu_editDetails],
+    "group":[generateNodeMenu_toggle,generateNodeMenu_traverse,generateNodeMenu_compareChildren,generateNodeMenu_editDetails],
+    "default":[generateNodeMenu_toggle,generateNodeMenu_traverse,generateNodeMenu_editDetails],
 }

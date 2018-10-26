@@ -60,7 +60,6 @@ const render = (newCanvas=true) =>
         .enter()
         .append("g")
         .attr("id",(d) => {return `${d.nodeId}-element`})
-        //.attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`})
         .attr("transform",(d)=>{return `translate (${(d.level+0.5)*nodeDistance},${d.x})`});
 
     createNodeShadowElements(nodePlacements);
@@ -100,6 +99,7 @@ const createCanvas = (xRange,yRange) =>
                 "zoom",
                 () =>
                 {
+                    nodeMenuCloseAll();
                     nodeCanvas.attr("transform",d3.event.transform);
                 }
             )
@@ -225,7 +225,7 @@ const updateNodeSelected = (nodeId,selected) =>
 
 const onClickAction = (nodeId) =>
 {
-    console.log("click",nodeId,event);
+    nodeMenuCloseAll();
     return generateNodeMenu(nodeId);
     const node = nodes[nodeId];
     if (node.type == "group")
@@ -244,6 +244,7 @@ const onClickAction = (nodeId) =>
 
 const onContextMenu = (nodeId) =>
 {
+    nodeMenuCloseAll();
     const node = nodes[nodeId];
     console.log("context",nodeId,node);
     if (node.type == "group")
