@@ -1,7 +1,7 @@
 const {BasicStrategy} = require("passport-http");
 const passport = require("passport");
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcrypt-nodejs");
 const passwordValidator = require("password-validator");
 
 const {async_collection} = require("./apiHelper");

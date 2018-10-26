@@ -1,26 +1,27 @@
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcrypt-nodejs");
 const jwt = require("jsonwebtoken");
 const emailValidator = require("email-validator");
 
 const {encrypt} = require("./apiHelper");
 const {createAccount,validatePassword} = require("./account");
-const {validItemTypes,getItems,saveItem} = require("./items");
+const {validItemTypes,getItems,saveItem,deleteItem} = require("./items");
 
 const saltRounds = 10;
 const tokenSalt = "fdsgf$#QFDSA324gfa23113&hhSDg312";
 const isEmpty = str => {return str == "" || str == null};
 
-const verifyToken = (token) =>
+const verifyToken = async (token) =>
 {
+    console.log("[Verifying token]",token);
     try
     {
-        jwt.verify(token,tokenSalt);
+        await jwt.verify(token,tokenSalt);
         return true;
     }
     catch (error)
     {
-        console.log(error);
-        throw "Invalid token";
+        console.log("[Invalid token]",error);
+        return false;
     }
 }
 
@@ -118,6 +119,8 @@ const validItemsAPI = (req,res) =>
 
 const getItemsAPI = async (req,res) =>
 {
+    verifyToken(req.token);
+
     try
     {
         const result = await getItems(req.params.account,req.query);
@@ -144,11 +147,42 @@ const getItemsAPI = async (req,res) =>
     }
 }
 
+const deleteItemAPI = async (req,res) =>
+{
+    verifyToken(req.token);
+
+    try
+    {
+        await deleteItem(req.params.account,req.query);
+        res.json
+        (
+            {
+                "success":true,
+                "status":200,
+            }
+        );
+    }
+    catch (err)
+    {
+        console.log("[Delete error]",e);
+        res.json
+        (
+            {
+                "success":false,
+                "status":400,
+                "message":error
+            }
+        )
+    }
+}
+
 const saveItemAPI = (req,res) => {modifyItem(req,res,false);}
 const updateItemAPI = (req,res) => {modifyItem(req,res,true);}
 
 const modifyItem = async (req,res,update) =>
 {
+    verifyToken(req.token);
+
     try
     {
         const save = await saveItem(req.body,req.params.account,update);
@@ -161,4 +195,4 @@ const modifyItem = async (req,res,update) =>
     }
 }
 
-module.exports = {loginAPI,createAccountAPI,validItemsAPI,getItemsAPI,saveItemAPI,updateItemAPI}
+module.exports = {loginAPI,createAccountAPI,validItemsAPI,getItemsAPI,saveItemAPI,updateItemAPI,deleteItemAPI}
