@@ -95,7 +95,8 @@ const deleteItem = async (account,query) =>
             "success":true,
             "internal":true,
             "status":200,
-            "message":"Delete success"
+            "message":"Delete success",
+            "info":{"type":type,"identifier":identifier}
         };
     }
     catch (e)
@@ -164,20 +165,22 @@ const getItems = async (account,query) =>
 
 const saveItem = async (item,account,update) =>
 {
+    let type,identifier;
     try
     {
-        const type = await verifyItem(item);
+        type = await verifyItem(item);
         const collection = await async_collection(type);
 
         const toSave = item["details"];
         toSave["account"] = account;
+        identifier = toSave["identifier"];
         if(update)
         {
             const attempt = await collection.updateOne
             (
                 {
-                    "account":toSave["account"],
-                    "identifier":toSave["identifier"]
+                    "account":account,
+                    "identifier":identifier
                 },
                 {"$set":toSave},
                 {upsert:false}
@@ -196,7 +199,8 @@ const saveItem = async (item,account,update) =>
             "success":true,
             "internal":true,
             "status":200,
-            "message":update ? "Item updated" : "Item saved"
+            "message":update ? "Item updated" : "Item saved",
+            "info":{"type":type,"identifier":identifier}
         }
     }
     catch (error)
@@ -222,7 +226,8 @@ const saveItem = async (item,account,update) =>
                 "success":false,
                 "internal":true,
                 "status":400,
-                "message": update ? "Item does not exist for account" : "Item already exists for account"
+                "message": update ? "Item does not exist for account" : "Item already exists for account",
+                "info":{"type":type,"identifier":identifier}
             }
         }
     }

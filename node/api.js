@@ -10,23 +10,24 @@ const saltRounds = 10;
 const tokenSalt = "fdsgf$#QFDSA324gfa23113&hhSDg312";
 const isEmpty = str => {return str == "" || str == null};
 
-const verifyToken = async (token) =>
+const verifyToken = async (token,username) =>
 {
-    console.log("[Verifying token]",token);
     try
     {
-        await jwt.verify(token,tokenSalt);
-        return true;
+        const details = await jwt.verify(token,tokenSalt);
+        if (details.username == null || username == null || username != details.username) {throw {"message":"Mismatched token"}}
+        return {"success":true};
     }
     catch (error)
     {
-        console.log("[Invalid token]",error);
-        return false;
+        console.log("[Invalid token]",error.message);
+        return {"success":false,"message":error.message};
     }
 }
 
 const loginAPI = async (req,res) =>
 {
+    console.log("[Login - Attempt]",req.user)
     if (!req.user["success"])
     {
         return res.json(req.user);
@@ -45,10 +46,11 @@ const loginAPI = async (req,res) =>
                 "resetRequired":req.user["resetRequired"]
             }
         );
-        console.log("[Login]",req.user["username"]);
+        console.log("[Login - Success]",req.user["username"]);
     }
     catch (e)
     {
+        console.log("[Login - Failed]",req.user["username"]);
         res.json
         (
             {
@@ -62,6 +64,7 @@ const loginAPI = async (req,res) =>
 
 const createAccountAPI = async (req,res) =>
 {
+    console.log(`[Create Account - Attempt] Username:${req.body.username}`);
     const username = req.body["username"];
     const password = req.body["password"];
     const email = req.body["email"];
@@ -101,13 +104,14 @@ const createAccountAPI = async (req,res) =>
 
     try
     {
-        const hash = await bcrypt.hash(password,saltRounds);
+        const hash = bcrypt.hashSync(password,bcrypt.genSaltSync(saltRounds));
         const create = await createAccount({"username":username,"hash":hash,"email":email});
         res.json(create);
-        console.log("[Create Account] Username:",req.body["username"],", Email:",req.body["email"]);
+        console.log(`[Create Account - Success] Username: ${req.body["username"]}, Email:${req.body["email"]}`);
     }
     catch (e)
     {
+        console.log(`[Create Account - Failed] Username: ${req.body["username"]} ${JSON.stringify(e)}`);
         res.json(e);
     }
 }
@@ -119,7 +123,18 @@ const validItemsAPI = (req,res) =>
 
 const getItemsAPI = async (req,res) =>
 {
-    verifyToken(req.token);
+    const tokenResult = await verifyToken(req.token,req.params.account);
+    if (!tokenResult.success)
+    {
+        return res.json
+        (
+            {
+                "success":false,
+                "status":401,
+                "message":tokenResult.message,
+            }
+        );
+    }
 
     try
     {
@@ -135,7 +150,7 @@ const getItemsAPI = async (req,res) =>
     }
     catch (error)
     {
-        console.log(error);
+        console.log("[Get error]",error);
         res.json
         (
             {
@@ -149,7 +164,18 @@ const getItemsAPI = async (req,res) =>
 
 const deleteItemAPI = async (req,res) =>
 {
-    verifyToken(req.token);
+    const tokenResult = await verifyToken(req.token,req.params.account);
+    if (!tokenResult.success)
+    {
+        return res.json
+        (
+            {
+                "success":false,
+                "status":401,
+                "message":tokenResult.message,
+            }
+        );
+    }
 
     try
     {
@@ -181,7 +207,18 @@ const updateItemAPI = (req,res) => {modifyItem(req,res,true);}
 
 const modifyItem = async (req,res,update) =>
 {
-    verifyToken(req.token);
+    const tokenResult = await verifyToken(req.token,req.params.account);
+    if (!tokenResult.success)
+    {
+        return res.json
+        (
+            {
+                "success":false,
+                "status":401,
+                "message":tokenResult.message,
+            }
+        );
+    }
 
     try
     {
@@ -190,7 +227,7 @@ const modifyItem = async (req,res,update) =>
     }
     catch (error)
     {
-        console.log(error);
+        console.log("[Modify error]",error);
         res.json(error);
     }
 }

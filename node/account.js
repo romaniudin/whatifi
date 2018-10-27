@@ -22,7 +22,7 @@ const async_verify = async (username,password) =>
             throw {"success":false,"code":401,"message":"Incorrect credentials"};
         }
 
-        const valid = await bcrypt.compare(password,user["hash"]);
+        const valid = await bcrypt.compareSync(password,user["hash"]);
 
         if (valid)
         {
@@ -47,7 +47,6 @@ const async_verify = async (username,password) =>
 passport.use( new BasicStrategy( async (username,password,done) =>
 {
     const verify = await async_verify(username,password);
-
     return done
     (
         null,
@@ -103,7 +102,7 @@ const createAccount = async (account) =>
         if (error["code"] == 11000)
         {
             errorStatus = 400;
-            message = error["errmsg"].includes("username")  ? "Username" : "Email"  + " already in use";
+            message = `${error["errmsg"].includes("username")  ? "Username" : "Email"} already in use`;
         }
 
         throw {
