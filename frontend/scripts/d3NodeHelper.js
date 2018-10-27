@@ -99,7 +99,6 @@ const createCanvas = (xRange,yRange) =>
                 "zoom",
                 () =>
                 {
-                    nodeMenuCloseAll();
                     nodeCanvas.attr("transform",d3.event.transform);
                 }
             )

@@ -194,7 +194,7 @@ const nodeOverlayAdd = (nodeId) =>
 
     generateOverlayInput(div,"Node Name","add-node-name-input","text",null);
     generateOverlayInput(div,"Value","add-node-value-input","number",null);
-    generateOverlayInput(div,"Frequency","add-node-frequency-input","number",null);
+    generateOverlayInput(div,"Frequency (Months)","add-node-frequency-input","number",null);
     generateOverlayInput(div,"Start Date","add-node-start-input","month",null);
     generateOverlayInput(div,"End Date","add-node-end-input","month",null);
 
