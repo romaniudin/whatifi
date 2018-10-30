@@ -84,6 +84,12 @@ const createCanvas = (xRange,yRange) =>
             .append("svg")
             .attr("width","100%")
             .attr("height",`${nodeCanvasHeight}px`);
+
+        svg.append("rect")
+            .attr("width","100%")
+            .attr("height","100%")
+            .attr("opacity",0.3)
+            .attr("fill",whatifiOrange);
     }
 
     nodeCanvas = svg.append("g")
@@ -178,7 +184,7 @@ const renderNodeSelection = (nodeId) =>
 {
     const node = nodes[nodeId];
     d3.select(`#node-graph svg #node-graph-viewbox #${nodeId}-element .img-node`)
-        .attr("stroke", node.selected ? nodeSelectedBorderColour : nodeBorderColour);
+        .attr("stroke", node.selected ? nodeSelectedBorderColour : nodeImageBorderColour(node));
 }
 
 const renderNodeHighlight = (nodeId) =>
@@ -244,8 +250,8 @@ const onClickAction = (nodeId) =>
 const onContextMenu = (nodeId) =>
 {
     nodeMenuCloseAll();
+    hideLineGraphDisplay();
     const node = nodes[nodeId];
-    console.log("context",nodeId,node);
     if (node.type == "group")
     {
         nodeOverlayDetails(node.nodeId);
@@ -270,7 +276,7 @@ const createNodeElements = (node) =>
         .attr("stroke-width",4)
         .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`})
         //.attr("oncontext",(d) => {return `startReverseTraverse("${d.nodeId}")`});
-        .attr("oncontextmenu",(d) => {return `onContextMenu("${d.nodeId}")`});
+        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`});
 
     node.append("circle")
         .attr("class","img-node")
@@ -281,7 +287,7 @@ const createNodeElements = (node) =>
         .attr("cx","30")
         .attr("cy","-30")
         .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`})
-        .attr("oncontextmenu",(d) => {return `onContextMenu("${d.nodeId}")`});
+        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`});
         //.on("click",(d) => {nodeOverlayAdd(d)});
 
     node.append("circle")
@@ -326,7 +332,7 @@ const createNodeElements = (node) =>
         .attr("text-anchor","middle")
         .attr("y",5)
         .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`})
-        .attr("oncontextmenu",(d) => {return `onContextMenu("${d.nodeId}")`});
+        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`});
 }
 
 const createNodeShadowElements = (node) =>

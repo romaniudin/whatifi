@@ -1,8 +1,14 @@
 <html>
     <head>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+        <link rel="stylesheet" href="src/style/spacing.css">
+
         <script crossorigin src="https://unpkg.com/react@16/umd/react.production.min.js"></script>
         <script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js"></script>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
         <script src="https://d3js.org/d3.v5.min.js"></script>
         <script src="scripts/index.js"></script>
@@ -16,48 +22,48 @@
         <script src="scripts/d3ScenarioHelper.js"></script>
         <script src="scripts/scenario.js"></script>
         <script>
-
             document.addEventListener('contextmenu', event => event.preventDefault());
-
-            function allowDrop(ev) {
-            ev.preventDefault();
-            }
-
-            function drag(ev) {
-                ev.dataTransfer.setData("text", ev.target.id.replace("node-root-",""));
-            }
-
-            function drop(ev) {
-                ev.preventDefault();
-
-                const components = ev.target.id.split("node-");
-                const node = "node-"+components.slice(-1);
-
-                var data = ev.dataTransfer.getData("text");
-                addChild(data,node);
-
-                document.getElementById("node").innerHTML = generateNode(me);
-            }
-    
         </script>
     </head>
     <body>
-        <div id="node-graph" style="border:1px solid black"></div>
-        <div id="scenario-bar"></div>
-        <div id="line-graph" style="border:1px solid black"></div>
+        <div class="row" id="whatifi-details-summary" style="background:darkslategrey;">
+            <div class="col"></div>
+            <div class="col-align-center"><img height="40px" src="src/img/banner.png"></div>
+            <div class="col"></div>
+        </div>
+        <div id="whatifi-details" style="width:100%;top:235px;opacity:0.95;position:absolute;">
+            <div class="row" id="whatifi-line-graph-container" style="background:whitesmoke;opacity:1;">
+                <div class="col-2 whatifi-line-graph-detail" id="whatifi-line-graph-actions" style="border-right:1px #d8e8ff solid;display:none;">Actions</div>
+                <div class="col whatifi-line-graph-detail" id="whatifi-line-graph" style="border-right:1px #d8e8ff solid;display:none;"></div>
+                <div class="col-3 whatifi-line-graph-detail" id="whatifi-line-graph-information" style="display:none">
+                    <div id="whatifi-line-graph-information-title" style="padding-left:10px"><h6>Graph Details</h6></div>
+                    <div id="whatifi-line-graph-information-data" style="overflow:auto;max-height:200px" align="middle">
+                        <div class="row title ">
+                            <div class="col"><b>Option</b></div>
+                            <div class="col"><b>Value</b></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="node-graph"></div>
+        <div id="whatifi-details-button" style="background:darkslategrey;text:whitesmoke;height:40px" align="middle"><br></div>
+        <div id="scenario-bar" style="border:1px solid gainsboro"></div>
         <script>
             const me = addNode("Me","me");
             const job = addNode("Job","group");
             addChild(job,me,false,true);
 
-            const transportation = addNode("Transportation","group");
-            addChild(transportation,job,false,true);
-
             const childcare = addNode("Child care","group");
-            addChild(childcare,transportation,false,true);
+            addChild(childcare,job,false,true);
 
             render();
             renderScenario();
+            addNewNodeTo(job,"Job1","income",{"finance":{"value":10000,"frequency":1,"start":"2018-11"}});
+            addNewNodeTo(job,"Job2","income",{"finance":{"value":12000,"frequency":1,"start":"2019-05"}});
+            addNewNodeTo(job,"Job2","income",{"finance":{"value":20000,"frequency":1,"start":"2020-05","end":"2022-01"}});
+
+            addNewNodeTo(childcare,"Nanny","expense",{"finance":{"value":-35000,"frequency":12,"start":"2018-10"}});
 
         </script>
     </body>

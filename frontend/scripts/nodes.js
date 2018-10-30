@@ -315,12 +315,12 @@ const flashNode = (nodeId,flash=0) =>
     }
 } 
 
-const startReverseTraverse = (nodeId) =>
+const startReverseTraverse = (nodeId,showGraph=true,fastTraverse=false) =>
 {
     currentTraverse = [];
     unhighlightAllNodes(); 
     removeAllLinkTraverse(); 
-    reverseTraverse(nodeId,currentTraverse);
+    reverseTraverse(nodeId,currentTraverse,showGraph,fastTraverse);
 }
 
 const nodeOptions = (nodeId) =>
@@ -366,16 +366,18 @@ const compareChildNodes = (nodeId) =>
     (
         (childNodeId) =>
         {
-            finances.push(findFinancialValues([childNodeId]));
+            const childNode = nodes[childNodeId];
+            finances.push({"identifier":childNode.nodeName,"finance":findFinancialValues([childNodeId])});
         }
     );
 
     renderGraph(finances);
 }
 
-const reverseTraverse = (nodeId,traversedNodes) =>
+const reverseTraverse = (nodeId,traversedNodes,showGraph=true,fastTraverse=false) =>
 {
     const node = nodes[nodeId];
+    const traverseDelay = fastTraverse ? 0 : animationDelay;
     highlightNode(nodeId);
     selectNode(nodeId);
     traversedNodes.push(nodeId);
@@ -395,10 +397,10 @@ const reverseTraverse = (nodeId,traversedNodes) =>
     else if (node["parentNodes"].length == 0)
     {
         const finance = findFinancialValues(traversedNodes);
-        if (finance.length > 0)
+        if (finance.length > 0 && showGraph)
         {
             currentScenario = [finance];
-            renderGraph([finance]);
+            renderGraph([{"identifier":"Current Option","finance":finance}]);
         }
     }
     else if (node["parentNodes"].length > 1)
@@ -415,9 +417,9 @@ const reverseTraverse = (nodeId,traversedNodes) =>
                     () => 
                     {
                         renderLinkTraverse(parentNodeId,nodeId);
-                        setTimeout(()=>reverseTraverse(parentNode["nodeId"],traversedNodes),animationDelay);
+                        setTimeout(()=>reverseTraverse(parentNode["nodeId"],traversedNodes,showGraph,fastTraverse),traverseDelay);
                     },
-                    animationDelay
+                    traverseDelay
                 );
             }
         }
@@ -430,7 +432,7 @@ const reverseTraverse = (nodeId,traversedNodes) =>
     {
         const nextId = node["parentNodes"][0];
         renderLinkTraverse(nextId,nodeId);
-        setTimeout(() => {reverseTraverse(nextId,traversedNodes)},100);
+        setTimeout(() => {reverseTraverse(nextId,traversedNodes,showGraph,fastTraverse)},traverseDelay);
     }
 }
 
@@ -443,13 +445,17 @@ const startForwardTraverse = (nodeId) =>
     forwardTraverse(nodeId,forwardTraverseNodes);
     const allOptions = joinForwardTraverse(forwardTraverseNodes);
     const allFinances = [];
+    let count = 0;
     allOptions.map
     (
         option =>
         {
-            allFinances.push(findFinancialValues(option));
+            count += 1;
+            allFinances.push({"identifier":`Option ${count}`,"finance":findFinancialValues(option),"nodes":option});
         }
     );
+    console.log(allFinances);
+    currentScenario = allFinances;
     renderGraph(allFinances);
 }
 
