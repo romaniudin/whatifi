@@ -347,7 +347,6 @@ const compareChildNodes = (nodeId) =>
     const finances = [];
     const node = nodes[nodeId];
 
-    console.log(node);
     if (node.childrenNodes.length == 1 && nodes[node.childrenNodes[0]].type == "group")
     {
         flashNode(nodeId);
@@ -454,7 +453,6 @@ const startForwardTraverse = (nodeId) =>
             allFinances.push({"identifier":`Option ${count}`,"finance":findFinancialValues(option),"nodes":option});
         }
     );
-    console.log(allFinances);
     currentScenario = allFinances;
     renderGraph(allFinances);
 }

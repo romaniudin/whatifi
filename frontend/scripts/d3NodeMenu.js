@@ -11,7 +11,6 @@ const nodeMenuBorder = 2;
 const generateNodeMenu = (nodeId) =>
 {
     nodeMenuCloseAll();
-    console.log(`generating menu for ${nodeId}-element`,d3.select(`${nodeId}-element`));
     const node = nodes[nodeId];
     const container = d3.select(`#${nodeId}-element`).append("g")
         .attr("class","node-menu-container");

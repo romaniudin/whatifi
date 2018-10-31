@@ -1,14 +1,14 @@
 let lineCanvas;
 let liveData;
+
 const renderGraph = (request,title="") =>
 {
-    console.log("render request",request);
+    d3.select("#whatifi-line-graph-information-title-header h6").text(`${scenarioDisplayMonthly ? "Monthly" : "Cummulative"} Total:`);
     const data = [];
     request.map
     (
         option => {if (option.finance.length > 0) data.push(option)}
     );
-    console.log("rendering formatted",data);
     if (data==null || data.length == 0) return;
 
     liveData = data;
@@ -16,7 +16,7 @@ const renderGraph = (request,title="") =>
     const _data = dataset[0];
 
     const padding = 50;
-    const heightRatio = 0.2;
+    const heightRatio = 0.4;
     const width = 500;
     const height = width*heightRatio;
 
@@ -73,6 +73,7 @@ const renderGraph = (request,title="") =>
         .attr("x",(width-padding)/2)
         .attr("y",height+padding)
         .attr("text-anchor","middle")
+        .attr("fill","white")
         .text("Date");
 
     lineCanvas.append("g")
@@ -85,6 +86,7 @@ const renderGraph = (request,title="") =>
         .attr("y",0-padding)
         .attr("x",0-height/2)
         .attr("text-anchor","middle")
+        .attr("fill","white")
         .text("Income ($)");
 
     const yTicks = d3.selectAll("#y-axis .tick text");
@@ -97,16 +99,17 @@ const renderGraph = (request,title="") =>
         }
     );
 
-    const colourScheme = ["green","red","blue","yellow"];
+    const baseColour = "lightgrey";
+    const selectionColour = "white";
     const allDates = [];
     dataset.map
     (
         (dataGroup,i) =>
         {
-            const colour = colourScheme[i%4];
+            const colour = baseColour;//colourScheme[i%4];
             lineCanvas.append("path")
                 .datum(dataGroup)
-                .attr("class","line")
+                .attr("class",(d)=>`line-datapoint line-${d[0].option.toLowerCase().split(" ").join("_")}`)
                 .attr("fill","none")
                 .attr("stroke",colour)
                 .attr("opacity",0.8)
@@ -124,7 +127,7 @@ const renderGraph = (request,title="") =>
                     }
                 )
                 .attr("cy",(d) => yScale(scenarioDisplayMonthly ? d.monthly : d.cummulative))
-                .attr("class",d=>`income-${new Date(d.date).toISOString().replace(":","_").replace(":","_").replace(".","_")}`)
+                .attr("class",d=>`income-${new Date(d.date).toISOString().replace(":","_").replace(":","_").replace(".","_")} income-data-point`)
                 .attr("stroke","grey")
                 .attr("stroke-width",1)
                 .attr("fill","none")
@@ -148,9 +151,13 @@ const renderGraph = (request,title="") =>
         .on("mouseover",
             (d) =>
             {
+                d3.selectAll(`.income-data-point`).attr("opacity",0);
+                d3.selectAll("#whatifi-line-graph-information-data .data").remove();
+                d3.select("#whatifi-line-graph-information-title h6").html("<br>");
+
                 const dataPoints = d3.selectAll(`.income-${new Date(d).toISOString().replace(":","_").replace(":","_").replace(".","_")}`);
 
-                const displayedOptions = [];
+                let displayedOptions = [];
 
                 dataPoints.attr("opacity",
                     option =>
@@ -159,7 +166,8 @@ const renderGraph = (request,title="") =>
 
                         const monthNames = ["January", "February", "March", "April", "May", "June","July", "August", "September", "October", "November", "December"];
                         const date = new Date(option.date);
-                        d3.select("#whatifi-line-graph-information-title h6").text(`${scenarioDisplayMonthly ? "Monthly" : "Cummulative"} Total: ${monthNames[date.getMonth()]} ${date.getFullYear()}`);
+                        d3.select("#whatifi-line-graph-information-title-header h6").text(`${scenarioDisplayMonthly ? "Monthly" : "Cummulative"} Total:`);
+                        d3.select("#whatifi-line-graph-information-title h6").text(`${monthNames[date.getMonth()]} ${date.getFullYear()}`);
                         let data = d3.selectAll("#whatifi-line-graph-information-data")
                             .append("div")
                             .attr("class","row data");
@@ -172,21 +180,23 @@ const renderGraph = (request,title="") =>
 
                         return 1;
                     }
-                );
+                )
+                .attr("fill","white");
 
+                d3.selectAll(".line-datapoint")
+                    .attr("stroke",baseColour)
+                    .attr("stroke-width",1);
+                d3.selectAll(`.line-${bestScenario(displayedOptions).identifier.toLowerCase().split(" ").join("_")}`)
+                    .attr("stroke","white")
+                    .attr("stroke-width",4);
                 highlightBestScenario(displayedOptions);
             }
         )
         .on("mouseout",
             (d) =>
             {
-                d3.selectAll(`.income-${new Date(d).toISOString().replace(":","_").replace(":","_").replace(".","_")}`).attr("opacity",0);
-                d3.selectAll("#whatifi-line-graph-information-data .data").remove();
-                d3.select("#whatifi-line-graph-information-title h6").text("Graph Details");
             }
         );
-
-    showLineGraphDisplay();
 
     showLineGraphDisplay();
     enableLineGraphDetails();
@@ -291,36 +301,34 @@ const toggleLineGraphDisplay = () =>
 const showLineGraphDisplay = () =>
 {
     const graph = d3.selectAll(".whatifi-line-graph-detail")
-        .style("display","block")
-        .style("border-top",`2px solid ${whatifiBlue}`)
-        .style("border-bottom",`2px solid ${whatifiBlue}`);
+        .style("display","block");
 
     const button = d3.select("#whatifi-details-button")
-        .text("Hide Details")
-        .style("color","white");
+        .text("Hide");
 }
 
 const hideLineGraphDisplay = () =>
 {
     const graph = d3.selectAll(".whatifi-line-graph-detail")
-        .style("display","none")
-        .style("border-top","0px")
-        .style("border-bottom","0px");
+        .style("display","none");
 
     const button = d3.select("#whatifi-details-button")
-        .text("Expand Details")
-        .style("color","white");
+        .text("Show");
 }
 
 const enableLineGraphDetails = () =>
 {
     const button = d3.select("#whatifi-details-button")
-        .attr("onclick","toggleLineGraphDisplay()");
+        .attr("onclick","toggleLineGraphDisplay()")
+        .style("background","white")
+        .style("opacity","0.5")
+        .style("display","block");
 }
 
 const disableLineGraphDetails = () =>
 {
     const button = d3.select("#whatifi-details-button")
-        .attr("onclick","");
+        .attr("onclick","")
+        .style("display","none");
 }
 

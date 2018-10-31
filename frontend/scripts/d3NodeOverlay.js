@@ -2,30 +2,11 @@ const removeNodeOverlay = () =>
 {
     d3.selectAll("#node-overlay div").remove();
     d3.select("#node-overlay")
-        .transition()
-        .duration(tooltipTransitionDelay)
-        .style("opacity",0.2)
-        .style("padding", "0")
-        .style("width",`${tooltipMinLength}px`);
+        .style("display","none");
 }
 
 const createNodeOverlay = (containerId) =>
 {
-    d3.select("#node-graph")
-        .append("div")
-        .attr("id","node-overlay")
-        .attr("class", "tooltip")
-        .style("overflow-y","auto")
-        .style("max-height", `${nodeCanvasHeight-20}`)
-        .style("position", "absolute")
-        .style("background", "lightgrey")
-        .style("opacity", 0.2)
-        .style("padding", "0")
-        .style("border-radius","5px")
-        .style("left","10px")
-        .style("top","10px")
-        .style("width",`${tooltipMinLength}px`)
-        .append("div");
 }
 
 const generateOverlayInput = (overlay,label,id,type,value=null) =>
@@ -97,7 +78,7 @@ const nodeOverlayDetails = (nodeId) =>
         .transition().duration(tooltipTransitionDelay)
         .style("padding", "0 10px 0 10px")
         .style("opacity",0.95)
-        .style("width","auto");
+        .style("display","block");
 
     const div = d3.select("#node-overlay").append("div");
 
@@ -186,7 +167,7 @@ const nodeOverlayAdd = (nodeId) =>
         .transition().duration(tooltipTransitionDelay)
         .style("padding", "0 10px 0 10px")
         .style("opacity",0.95)
-        .style("width","auto");
+        .style("display","block");
 
     const div = d3.select("#node-overlay").append("div");
 
@@ -232,11 +213,11 @@ const nodeOverlayPersonalDetails = (nodeId) =>
         .transition().duration(tooltipTransitionDelay)
         .style("padding", "0 10px 0 10px")
         .style("opacity",0.95)
-        .style("width","auto");
+        .style("display","block");
 
     const div = d3.select("#node-overlay").append("div");
 
-    div.append("h5").text(`${node.nodeName}'s Details`);
+    div.append("h5").text(`My Details`);
 
     generateOverlayInput(div,"Name","details-node-name-input","text",node.nodeName);
     generateOverlayInput(div,"Current Location","details-node-location-input","text",node.location);

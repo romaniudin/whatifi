@@ -87,14 +87,14 @@ const compareSaved = () =>
     renderGraph(compare);
 }
 
-const bestScenario = (options) =>
+const bestScenario = (options,monthly=true) =>
 {
     options.sort
     (
         (a,b) =>
         {
-            const aVal = scenarioDisplayMonthly ? a.monthly : a.cummulative;
-            const bVal = scenarioDisplayMonthly ? b.monthly : b.cummulative;
+            const aVal = scenarioDisplayMonthly && monthly ? a.monthly : a.cummulative;
+            const bVal = scenarioDisplayMonthly && monthly ? b.monthly : b.cummulative;
 
             if (aVal == bVal) return 0;
 
@@ -107,7 +107,7 @@ const bestScenario = (options) =>
     (
         scenario =>
         {
-            if (scenario.identifier == options[0].option) {best = scenario.nodes}
+            if (scenario.identifier == options[0].option) {best = scenario}
         }
     );
 
@@ -119,7 +119,7 @@ const highlightBestScenario = (options) =>
 {
     if (options.length < 2 || !options) return;
 
-    const toHighlight = bestScenario(options);
+    const toHighlight = bestScenario(options).nodes;
     toHighlight.map
     (
         nodeId =>

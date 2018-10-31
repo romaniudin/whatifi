@@ -250,7 +250,6 @@ const onClickAction = (nodeId) =>
 const onContextMenu = (nodeId) =>
 {
     nodeMenuCloseAll();
-    hideLineGraphDisplay();
     const node = nodes[nodeId];
     if (node.type == "group")
     {
