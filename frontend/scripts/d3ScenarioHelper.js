@@ -27,9 +27,8 @@ const renderScenarioActions = () =>
     //actions.push({"name":"Compare Saves","action":"compareSaved","arg":""});
     actions.push({"name":"Show Monthly","action":"toggleScenarioDisplay","arg":""});
 
-    const container = d3.select("#whatifi-line-graph-actions-container");
-
-    container.selectAll("div").remove();
+    const container = d3.select("#whatifi-line-graph-actions");
+    container.selectAll("div")
 
     for (const i in actions)
     {

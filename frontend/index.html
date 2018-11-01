@@ -26,56 +26,42 @@
         </script>
     </head>
     <body>
-        <div class="row" id="whatifi-banner-container" style="background:darkslategrey">
+        <div class="row" id="whatifi-banner-container" style="background:darkslategrey;height:5%">
             <div class="col"></div>
-            <div class="col-12" id="whatifi-banner"><img height="40px" src="src/img/banner.png"></div>
+            <div class="col-12" id="whatifi-banner"><img height="100%" src="src/img/banner.png"></div>
             <div class="col"></div>
         </div>
-        <div id="whatifi-app-container" style="margin:0 0 40px 0">
-            <div class="row">
-                <div class="col-1" style="border-right:lightgrey 1px solid;"></div>
+        <div id="whatifi-app-container" style="height:95%">
+            <div class="row" style="height:auto">
                 <div class="col" id="node-graph"></div>
                 <div class="col-3" id="node-overlay" style="display:none;background:whitesmoke;border-left:1px solid lightgrey;"></div>
-                <div class="col-1" style="border-left:lightgrey 1px solid;"></div>
-            </div>
-            <div class="row" style="opacity:0.8;height:20px">
-                <div class="col-1" style="border-right:lightgrey 1px solid;"></div>
-                <div class="col" style="background:#f8b46a"></div>
-                <div class="col-1" style="background:#f8b46a;text:black;" align="middle">
-                    <div id="whatifi-details-button" style="display:none;opacity:0.5;background:white;color:black;border-bottom:1px solid lightgrey;"><br></div>
-                </div>
-                <div class="col" style="background:#f8b46a"></div>
-                <div class="col-1" style="border-left:lightgrey 1px solid;"></div>
-            </div>
-            <div class="row">
-                <div class="col-1" style="border-right:lightgrey 1px solid;"></div>
-                <div class="col">
-                    <div id="whatifi-details" style="opacity:0.95;">
-                        <div class="row" id="whatifi-line-graph-container" style="background:darkslategrey;color:white;opacity:1;border-bottom:1px solid lightgrey;">
-                            <div class="col-2 whatifi-line-graph-detail" id="whatifi-line-graph-actions" style="display:none;">
-                                <div id="whatifi-line-graph-actions-title-header" style="padding:10px 10px 20px 10px"><h6>Actions</h6></div>
-                                <div id="whatifi-line-graph-actions-container">
-                                    <!-- Actions -->
-                                </div>
-                            </div>
-                            <div class="col whatifi-line-graph-detail" id="whatifi-line-graph" style="border-left:1px lightgrey solid;border-right:1px lightgrey solid;display:none;"></div>
-                            <div class="col-3 whatifi-line-graph-detail" id="whatifi-line-graph-information" style="display:none">
+                <div class="col-6 whatifi-line-graph-detail" style="display:none;background:darkslategrey;color:white;height:100%">
+                    <div id="whatifi-line-graph"></div>
+                    <div class="row">
+                        <div class="col-6" id="whatifi-line-graph-information-data" style="overflow:auto;max-height:200px" align="middle">
+                            <div class="row">
                                 <div id="whatifi-line-graph-information-title-header" style="padding-left:10px"><h6>Graph Details</h6></div>
+                            </div>
+                            <div class="row">
                                 <div id="whatifi-line-graph-information-title" style="padding-left:10px"><h6><br></h6></div>
-                                <div id="whatifi-line-graph-information-data" style="overflow:auto;max-height:200px" align="middle">
-                                    <div class="row title ">
-                                        <div class="col"><b>Option</b></div>
-                                        <div class="col"><b>Value</b></div>
-                                    </div>
-                                </div>
+                            </div>
+                            <div class="row title ">
+                                <div class="col"><b>Option</b></div>
+                                <div class="col"><b>Value</b></div>
+                            </div>
+                        </div>
+                        <div class="col-6" id="whatifi-line-graph-actions-container">
+                            <!-- Actions -->
+                            <div id="whatifi-line-graph-actions"></div>
+                            <div class="row" style="margin:20px 0 0 0 0">
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-1" style="border-left:lightgrey 1px solid;"></div>
             </div>
         </div>
-        <div id="scenario-bar" style="border:1px solid gainsboro"></div>
+        <div id="whatifi-details-button" style="position:absolute;right:0px;bottom:0px;display:none;opacity:0.5;background:#f8b46a;text:black;width:10%" align="middle"></div>
+        <!--<div id="scenario-bar" style="border:1px solid gainsboro"></div>-->
         <script>
             const me = addNode("Me","me");
             const job = addNode("Job","group");

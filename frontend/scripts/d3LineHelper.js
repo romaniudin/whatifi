@@ -16,7 +16,7 @@ const renderGraph = (request,title="") =>
     const _data = dataset[0];
 
     const padding = 50;
-    const heightRatio = 0.4;
+    const heightRatio = 0.5;
     const width = 500;
     const height = width*heightRatio;
 
@@ -53,7 +53,7 @@ const renderGraph = (request,title="") =>
     lineCanvas = d3.select("#whatifi-line-graph")
         .append("svg")
         .attr("width","100%")
-        .attr("height","300px")
+        .attr("height","50%")
         .attr("viewBox",`-${padding} 0 ${canvasWidth} ${canvasHeight}`)
         .append("g")
         .attr("transform",`translate(${padding/2},${padding/2})`);

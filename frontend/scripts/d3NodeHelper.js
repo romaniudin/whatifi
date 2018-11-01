@@ -83,12 +83,11 @@ const createCanvas = (xRange,yRange) =>
         svg = d3.select("#node-graph")
             .append("svg")
             .attr("width","100%")
-            .attr("height",`${nodeCanvasHeight}px`);
+            .attr("height","100%");
 
         svg.append("rect")
-            .attr("width","100%")
-            .attr("height","100%")
             .attr("opacity",0.3)
+            .attr("width","100%")
             .attr("fill",whatifiOrange);
     }
 
