@@ -1,7 +1,7 @@
 let lineCanvas;
 let liveData;
 
-const renderGraph = (request,title="") =>
+const renderGraph = (request,title="",toggled=false) =>
 {
     d3.select("#whatifi-line-graph-information-title-header h6").text(`${scenarioDisplayMonthly ? "Monthly" : "Cummulative"} Total:`);
     const data = [];
@@ -151,45 +151,15 @@ const renderGraph = (request,title="") =>
         .on("mouseover",
             (d) =>
             {
-                d3.selectAll(`.income-data-point`).attr("opacity",0);
-                d3.selectAll("#whatifi-line-graph-information-data .data").remove();
-                d3.select("#whatifi-line-graph-information-title h6").html("<br>");
+                resetGraphDetails();
 
+                d3.selectAll("#whatifi-graph-information-header .col").style("display","block");
                 const dataPoints = d3.selectAll(`.income-${new Date(d).toISOString().replace(":","_").replace(":","_").replace(".","_")}`);
 
-                let displayedOptions = [];
-
-                dataPoints.attr("opacity",
-                    option =>
-                    {
-                        displayedOptions.push(option);
-
-                        const monthNames = ["January", "February", "March", "April", "May", "June","July", "August", "September", "October", "November", "December"];
-                        const date = new Date(option.date);
-                        d3.select("#whatifi-line-graph-information-title-header h6").text(`${scenarioDisplayMonthly ? "Monthly" : "Cummulative"} Total:`);
-                        d3.select("#whatifi-line-graph-information-title h6").text(`${monthNames[date.getMonth()]} ${date.getFullYear()}`);
-                        let data = d3.selectAll("#whatifi-line-graph-information-data")
-                            .append("div")
-                            .attr("class","row data");
-                        data.append("div")
-                            .attr("class","col")
-                            .text(`${option.option}`);
-                        data.append("div")
-                            .attr("class","col")
-                            .text(`${parseInt(scenarioDisplayMonthly ? option.monthly : option.cummulative)}`);
-
-                        return 1;
-                    }
-                )
-                .attr("fill","white");
-
-                d3.selectAll(".line-datapoint")
-                    .attr("stroke",baseColour)
-                    .attr("stroke-width",1);
+                const displayedOptions = selectDataPoints(dataPoints);
                 d3.selectAll(`.line-${bestScenario(displayedOptions).identifier.toLowerCase().split(" ").join("_")}`)
                     .attr("stroke","white")
                     .attr("stroke-width",4);
-                highlightBestScenario(displayedOptions);
             }
         )
         .on("mouseout",
@@ -200,6 +170,56 @@ const renderGraph = (request,title="") =>
 
     showLineGraphDisplay();
     enableLineGraphDetails();
+
+    resetGraphDetails();
+}
+
+const resetGraphDetails = () =>
+{
+    d3.selectAll(`.income-data-point`).attr("opacity",0);
+    d3.selectAll("#whatifi-line-graph-information-data .data").remove();
+    d3.select("#whatifi-line-graph-information-title h6").html("<br>");
+    d3.selectAll("#whatifi-graph-information-header .col").style("display","none");
+}
+
+const selectDataPoints = (dataPoints) =>
+{
+    if (!dataPoints) return;
+
+    const displayedOptions = [];
+    const baseColour = "lightgrey";
+    const selectionColour = "white";
+
+    d3.selectAll("#whatifi-line-graph-information-data .data").remove();
+    dataPoints.attr("opacity",
+        option =>
+        {
+            displayedOptions.push(option);
+
+            const monthNames = ["January", "February", "March", "April", "May", "June","July", "August", "September", "October", "November", "December"];
+            const date = new Date(option.date);
+            d3.select("#whatifi-line-graph-information-title h6").text(`${monthNames[date.getMonth()]} ${date.getFullYear()}`);
+            let data = d3.selectAll("#whatifi-line-graph-information-data")
+                .append("div")
+                .attr("class","row data");
+            data.append("div")
+                .attr("class","col")
+                .text(`${option.option}`);
+            data.append("div")
+                .attr("class","col")
+                .text(`${parseInt(scenarioDisplayMonthly ? option.monthly : option.cummulative)}`);
+
+            return 1;
+        }
+    )
+    .attr("fill","white");
+
+    d3.selectAll(".line-datapoint")
+        .attr("stroke",baseColour)
+        .attr("stroke-width",1);
+
+    highlightBestScenario(displayedOptions);
+    return displayedOptions;
 }
 
 const formatDataset = (data) =>
