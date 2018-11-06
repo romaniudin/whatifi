@@ -231,19 +231,6 @@ const onClickAction = (nodeId) =>
 {
     nodeMenuCloseAll();
     return generateNodeMenu(nodeId);
-    const node = nodes[nodeId];
-    if (node.type == "group")
-    {
-        compareChildNodes(node.nodeId);
-    }
-    else if (node.type == "me")
-    {
-        startForwardTraverse(node.nodeId);
-    }
-    else
-    {
-        startReverseTraverse(node.nodeId);
-    }
 }
 
 const onContextMenu = (nodeId) =>

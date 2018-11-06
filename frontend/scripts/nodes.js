@@ -366,10 +366,18 @@ const compareChildNodes = (nodeId) =>
         (childNodeId) =>
         {
             const childNode = nodes[childNodeId];
-            finances.push({"identifier":childNode.nodeName,"finance":findFinancialValues([childNodeId])});
+            finances.push
+            (
+                {
+                    "identifier":childNode.nodeName,
+                    "finance":findFinancialValues([childNodeId]),
+                    "nodes":[childNodeId]
+                }
+            );
         }
     );
 
+    currentScenario = finances;
     renderGraph(finances);
 }
 

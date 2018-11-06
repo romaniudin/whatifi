@@ -1,5 +1,6 @@
 let lineCanvas;
 let liveData;
+let lastSelected;
 
 const renderGraph = (request,title="",toggled=false) =>
 {
@@ -154,12 +155,9 @@ const renderGraph = (request,title="",toggled=false) =>
                 resetGraphDetails();
 
                 d3.selectAll("#whatifi-graph-information-header .col").style("display","block");
-                const dataPoints = d3.selectAll(`.income-${new Date(d).toISOString().replace(":","_").replace(":","_").replace(".","_")}`);
 
-                const displayedOptions = selectDataPoints(dataPoints);
-                d3.selectAll(`.line-${bestScenario(displayedOptions).identifier.toLowerCase().split(" ").join("_")}`)
-                    .attr("stroke","white")
-                    .attr("stroke-width",4);
+                lastSelected = d;
+                const displayedOptions = selectDataPoints(d);
             }
         )
         .on("mouseout",
@@ -172,6 +170,14 @@ const renderGraph = (request,title="",toggled=false) =>
     enableLineGraphDetails();
 
     resetGraphDetails();
+    if (!toggled && !lastSelected)
+    {
+        lastSelected = null;
+    }
+    else
+    {
+        selectDataPoints(lastSelected);
+    }
 }
 
 const resetGraphDetails = () =>
@@ -182,8 +188,10 @@ const resetGraphDetails = () =>
     d3.selectAll("#whatifi-graph-information-header .col").style("display","none");
 }
 
-const selectDataPoints = (dataPoints) =>
+const selectDataPoints = (d) =>
 {
+    const dataPoints = d3.selectAll(`.income-${new Date(d).toISOString().replace(":","_").replace(":","_").replace(".","_")}`);
+
     if (!dataPoints) return;
 
     const displayedOptions = [];
@@ -219,6 +227,10 @@ const selectDataPoints = (dataPoints) =>
         .attr("stroke-width",1);
 
     highlightBestScenario(displayedOptions);
+
+    d3.selectAll(`.line-${bestScenario(displayedOptions).identifier.toLowerCase().split(" ").join("_")}`)
+        .attr("stroke","white")
+        .attr("stroke-width",4);
     return displayedOptions;
 }
 

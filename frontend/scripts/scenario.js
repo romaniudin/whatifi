@@ -118,7 +118,6 @@ let currentBest;
 const highlightBestScenario = (options) =>
 {
     if (options.length < 2 || !options) return;
-
     const toHighlight = bestScenario(options).nodes;
     toHighlight.map
     (

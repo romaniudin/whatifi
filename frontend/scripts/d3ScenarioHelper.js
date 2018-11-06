@@ -11,7 +11,7 @@ const toggleScenarioDisplay = () =>
 {
     scenarioDisplayMonthly = !scenarioDisplayMonthly;
     d3.select("#scenario-show_monthly").text(scenarioDisplayMonthly ? "Monthly Total" : "Cummulative Total");
-    renderGraph(currentScenario);
+    renderGraph(currentScenario,"",true);
 }
 
 const renderScenario = () =>
