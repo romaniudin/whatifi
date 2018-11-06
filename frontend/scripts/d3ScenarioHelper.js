@@ -10,8 +10,8 @@ let scenarioDisplayMonthly = true;
 const toggleScenarioDisplay = () =>
 {
     scenarioDisplayMonthly = !scenarioDisplayMonthly;
-    d3.select("#scenario-show_monthly text").text(scenarioDisplayMonthly ? "Show Monthly" : "Show Total");
-    renderGraph(currentScenario);
+    d3.select("#scenario-show_monthly").text(scenarioDisplayMonthly ? "Monthly Total" : "Cummulative Total");
+    renderGraph(currentScenario,"",true);
 }
 
 const renderScenario = () =>
@@ -23,10 +23,27 @@ const renderScenario = () =>
 const renderScenarioActions = () =>
 {
     const actions = [];
-    actions.push({"name":"Save Scenario","action":"addScenario","arg":""});
-    actions.push({"name":"Compare Saves","action":"compareSaved","arg":""});
-    actions.push({"name":"Show Monthly","action":"toggleScenarioDisplay","arg":""});
+    //actions.push({"name":"Save Scenario","action":"addScenario","arg":""});
+    //actions.push({"name":"Compare Saves","action":"compareSaved","arg":""});
+    actions.push({"name":"Show Monthly","action":"toggleScenarioDisplay","arg":"","container":"#whatifi-line-graph-information-title-header"});
 
+    for (const i in actions)
+    {
+        const action = actions[i];
+        const container = d3.select(action.container);
+        container.append("div")
+            .attr("id",`scenario-${action.name.toLowerCase().split(" ").join("_")}`)
+            .attr("width","100%")
+            .attr("onclick",`${action.action}()`)
+            .attr("align","middle")
+            .style("border","1px lightgrey solid")
+            .style("border-radius","5px")
+            .style("opacity",0.8)
+            .style("background",whatifiOrange)
+            .style("color","white")
+            .text(action.name)
+    }
+/*
     d3.select("#scenario-bar-actions").remove();
 
     const actionBar = d3.select("#scenario-bar")
@@ -51,6 +68,7 @@ const renderScenarioActions = () =>
         .attr("height",buttonHeight+2*buttonPadding);
 
     createScenarioButtons("scenario-bar-actions-buttons",actions,"scenario-action");
+*/
 }
 
 const renderScenarioSaved = () =>

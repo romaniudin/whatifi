@@ -1,5 +1,7 @@
 const whatifiOrange = "#f8b46a";
 const whatifiBlue = "#d8e8ff";
+const whatifiGrey = "darkslategrey";
+const whatifiGray = "darkslategrey";
 
 const borderScheme =
 {

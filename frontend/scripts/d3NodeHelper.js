@@ -83,7 +83,12 @@ const createCanvas = (xRange,yRange) =>
         svg = d3.select("#node-graph")
             .append("svg")
             .attr("width","100%")
-            .attr("height",`${nodeCanvasHeight}px`);
+            .attr("height","100%");
+
+        svg.append("rect")
+            .attr("opacity",0.3)
+            .attr("width","100%")
+            .attr("fill",whatifiOrange);
     }
 
     nodeCanvas = svg.append("g")
@@ -178,7 +183,7 @@ const renderNodeSelection = (nodeId) =>
 {
     const node = nodes[nodeId];
     d3.select(`#node-graph svg #node-graph-viewbox #${nodeId}-element .img-node`)
-        .attr("stroke", node.selected ? nodeSelectedBorderColour : nodeBorderColour);
+        .attr("stroke", node.selected ? nodeSelectedBorderColour : nodeImageBorderColour(node));
 }
 
 const renderNodeHighlight = (nodeId) =>
@@ -226,26 +231,12 @@ const onClickAction = (nodeId) =>
 {
     nodeMenuCloseAll();
     return generateNodeMenu(nodeId);
-    const node = nodes[nodeId];
-    if (node.type == "group")
-    {
-        compareChildNodes(node.nodeId);
-    }
-    else if (node.type == "me")
-    {
-        startForwardTraverse(node.nodeId);
-    }
-    else
-    {
-        startReverseTraverse(node.nodeId);
-    }
 }
 
 const onContextMenu = (nodeId) =>
 {
     nodeMenuCloseAll();
     const node = nodes[nodeId];
-    console.log("context",nodeId,node);
     if (node.type == "group")
     {
         nodeOverlayDetails(node.nodeId);
@@ -270,7 +261,7 @@ const createNodeElements = (node) =>
         .attr("stroke-width",4)
         .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`})
         //.attr("oncontext",(d) => {return `startReverseTraverse("${d.nodeId}")`});
-        .attr("oncontextmenu",(d) => {return `onContextMenu("${d.nodeId}")`});
+        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`});
 
     node.append("circle")
         .attr("class","img-node")
@@ -281,7 +272,7 @@ const createNodeElements = (node) =>
         .attr("cx","30")
         .attr("cy","-30")
         .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`})
-        .attr("oncontextmenu",(d) => {return `onContextMenu("${d.nodeId}")`});
+        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`});
         //.on("click",(d) => {nodeOverlayAdd(d)});
 
     node.append("circle")
@@ -326,7 +317,7 @@ const createNodeElements = (node) =>
         .attr("text-anchor","middle")
         .attr("y",5)
         .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`})
-        .attr("oncontextmenu",(d) => {return `onContextMenu("${d.nodeId}")`});
+        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`});
 }
 
 const createNodeShadowElements = (node) =>
