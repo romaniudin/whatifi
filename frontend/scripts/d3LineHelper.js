@@ -95,7 +95,6 @@ const renderGraph = (request,title="",toggled=false) =>
     (
         (d,i) =>
         {
-            //return i%2 != yTicks._groups[0].length%2 ? d : "";
             return i%2 == 0 ? d : "";
         }
     );
@@ -110,7 +109,7 @@ const renderGraph = (request,title="",toggled=false) =>
             const colour = baseColour;//colourScheme[i%4];
             lineCanvas.append("path")
                 .datum(dataGroup)
-                .attr("class",(d)=>`line-datapoint line-${d[0].option.toLowerCase().split(" ").join("_")}`)
+                .attr("class",(d)=>{return `line-datapoint line-${d[0].identifier.toLowerCase().split(" ").join("_")}`})
                 .attr("fill","none")
                 .attr("stroke",colour)
                 .attr("opacity",0.8)
@@ -278,7 +277,8 @@ const formatDataset = (data) =>
     (
         (option,group) =>
         {
-            const groupName = option.identifier;
+            const groupIdentifier = option.identifier;
+            const groupName = option.option;
             const dataGroup = option.finance;
             dataset.push([]);
             let total = 0;
@@ -307,7 +307,7 @@ const formatDataset = (data) =>
                         }
                     }
                 );
-                dataset[group].push({"option":groupName,"monthly":monthly,"cummulative":total,"date":currentDate});
+                dataset[group].push({"identifier":groupIdentifier,"option":groupName,"monthly":monthly,"cummulative":total,"date":currentDate});
                 currentDate = new Date(minDate.getFullYear(),minDate.getMonth()+1+i,0);
             }
         }

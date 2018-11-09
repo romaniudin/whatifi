@@ -3,7 +3,6 @@ const nodeCanvasHeight = 500;
 let balancedNodes;
 let svg,nodeCanvas;
 
-//const nodeBorderColour = "steelblue";
 const nodeShadowColour = "black";
 const nodeHighlightedColour = "gainsboro";
 const nodeTraversedBorderColour = "gainsboro";
@@ -59,8 +58,7 @@ const render = (newCanvas=true) =>
         .data(allNodes)
         .enter()
         .append("g")
-        .attr("id",(d) => {return `${d.nodeId}-element`})
-        .attr("transform",(d)=>{return `translate (${(d.level+0.5)*nodeDistance},${d.x})`});
+        .attr("id",(d) => {return `${d.nodeId}-element`});
 
     createNodeShadowElements(nodePlacements);
 
@@ -119,7 +117,7 @@ const compareNodeLevels = (a,b) =>
 {
     if (a.level == b.level) return 0;
 
-    return a.level > b.level ? 1 : 0;
+    return a.level > b.level ? 1 : -1;
 }
 
 const balanceLevel = (allNodes) =>
@@ -133,10 +131,6 @@ const balanceLevel = (allNodes) =>
         {
             node.x = start;
             start -= nodeDistance;
-            /*console.log(allNodes,node);
-
-            d3.selectAll(`#${node.nodeName}`)
-                .each((d,i)=>console.log(d,i));*/
         }
     );
 }
@@ -251,6 +245,16 @@ const onContextMenu = (nodeId) =>
     }
 }
 
+const obtainNodeXCoordinate = (node,offset) =>
+{
+    return (node.level+0.5)*nodeDistance+offset;
+}
+
+const obtainNodeYCoordinate = (node,offset) =>
+{
+    return node.x+offset;
+}
+
 const createNodeElements = (node) =>
 {
     node.append("circle")
@@ -259,8 +263,9 @@ const createNodeElements = (node) =>
         .attr("fill",d => nodeBackgroundColour(d))
         .attr("stroke",d => nodeBorderColour(d))
         .attr("stroke-width",4)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,0)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,0)})
         .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`})
-        //.attr("oncontext",(d) => {return `startReverseTraverse("${d.nodeId}")`});
         .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`});
 
     node.append("circle")
@@ -269,16 +274,17 @@ const createNodeElements = (node) =>
         .attr("fill",d => nodeImageBackgroundColour(d))
         .attr("stroke",d => nodeImageBorderColour(d))
         .attr("stroke-width",4)
-        .attr("cx","30")
-        .attr("cy","-30")
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,30)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,-30)})
         .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`})
         .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`});
-        //.on("click",(d) => {nodeOverlayAdd(d)});
 
     node.append("circle")
         .attr("r",8)
         .attr("fill","steelblue")
         .attr("cx",`${nodeDistance/2}`)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeDistance/2)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,0)})
         .attr("opacity",(d)=>{if (d.type=="group") return 1;else return 0;});
 
     const plusThickness = 2;
@@ -289,8 +295,8 @@ const createNodeElements = (node) =>
         .attr("stroke-width",2)
         .attr("width",plusThickness)
         .attr("height",plusHeight)
-        .attr("x",`${nodeDistance/2-plusThickness/2}`)
-        .attr("y",`-${plusHeight/2}`)
+        .attr("x",d=>{return obtainNodeXCoordinate(d,nodeDistance/2-plusThickness/2)})
+        .attr("y",d=>{return obtainNodeYCoordinate(d,-plusHeight/2)})
         .attr("opacity",(d)=>{if (d.type=="group") return 1;else return 0;});
 
     node.append("rect")
@@ -299,23 +305,25 @@ const createNodeElements = (node) =>
         .attr("stroke-width",2)
         .attr("width",plusHeight)
         .attr("height",plusThickness)
-        .attr("x",`${nodeDistance/2-plusHeight/2}`)
-        .attr("y",`-${plusThickness/2}`)
+        .attr("x",d=>{return obtainNodeXCoordinate(d,nodeDistance/2-plusHeight/2)})
+        .attr("y",d=>{return obtainNodeYCoordinate(d,-plusThickness/2)})
         .attr("opacity",(d)=>{if (d.type=="group") return 1;else return 0;});
 
     node.append("circle")
         .attr("class","add-node")
         .attr("r",8)
         .attr("fill","white")
-        .attr("cx",`${nodeDistance/2}`)
-        .attr("opacity",(d)=>{if (d.type=="group") return 0;else return 0;})
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeDistance/2)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,0)})
+        .attr("opacity",0)
         .attr("onclick",(d) => {if (d.type=="group") return `nodeOverlayAdd("${d.nodeId}")`;else return ""});
 
     node.append("text")
         .text(d=>d.nodeName)
         .attr("class","node-name")
         .attr("text-anchor","middle")
-        .attr("y",5)
+        .attr("x",d=>{return obtainNodeXCoordinate(d,0)})
+        .attr("y",d=>{return obtainNodeYCoordinate(d,5)})
         .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`})
         .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`});
 }
@@ -329,8 +337,8 @@ const createNodeShadowElements = (node) =>
         .attr("opacity",0.25)
         .attr("stroke","black")
         .attr("stroke-width",5)
-        .attr("cx","2")
-        .attr("cy","2");
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,2)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,2)});
 
     node.append("circle")
         .attr("class","img-node-shadow")
@@ -339,15 +347,15 @@ const createNodeShadowElements = (node) =>
         .attr("opacity",0.25)
         .attr("stroke","black")
         .attr("stroke-width",5)
-        .attr("cx","32")
-        .attr("cy","-28");
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,32)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,-28)});
 
     node.append("circle")
         .attr("class","add-node-shadow")
         .attr("r",8)
         .attr("fill","black")
-        .attr("cx",`${nodeDistance/2+1}`)
-        .attr("cy",1)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeDistance/2+1)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,1)})
         .attr("opacity",(d)=>{if (d.type=="group") return 0.25;else return 0;});
 }
 
@@ -394,8 +402,6 @@ const verifyNodeDetails = (nodeName,nodeValue,nodeFrequency,nodeStart,nodeEnd) =
         valid &= false;
         toast("Please enter a end date (>=start date)");
     }
-
-    console.log("verified details",valid,nodeName,nodeValue,nodeFrequency,nodeStart,nodeEnd);
 
     return valid;
 }

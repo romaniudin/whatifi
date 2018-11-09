@@ -34,15 +34,16 @@ const generateNodeMenuElements = (container,elements) =>
         .attr("stroke-width",nodeMenuBorder)
         .attr("rx",2)
         .attr("ry",2)
-        .attr("y",-(nodeMenuFontSize+nodeMenuPadding))
+        .attr("x",d=>{return obtainNodeXCoordinate(d,0)})
+        .attr("y",d=>{return obtainNodeYCoordinate(d,-(nodeMenuFontSize+nodeMenuPadding))})
         .attr("opacity",0.95)
         .attr("width",nodeMenuWidth)
         .attr("height",nodeMenuPadding*2 + (nodeMenuFontSize + nodeMenuPadding)*elements);
 
     container.append("circle")
         .attr("r",nodeMenuCloseRadius)
-        .attr("cy",-(nodeMenuFontSize+nodeMenuPadding))
-        .attr("cx",nodeMenuWidth)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeMenuWidth)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,-(nodeMenuFontSize+nodeMenuPadding))})
         .attr("fill","red")
         .attr("stroke","gainsboro")
         .attr("stroke-width",nodeMenuBorder);
@@ -51,18 +52,33 @@ const generateNodeMenuElements = (container,elements) =>
         .attr("height",nodeMenuCloseHeight)
         .attr("width",nodeMenuCloseWidth)
         .attr("fill","white")
-        .attr("transform",`translate(101.75,-21) rotate(45)`)
+        .attr("transform",`rotate(45)`)
+        .attr
+        (
+            "transform",
+            d =>
+            {
+                return `translate(${obtainNodeXCoordinate(d,101.75)},${obtainNodeYCoordinate(d,-21)}) rotate(45)`
+            }
+        );
 
     container.append("rect")
         .attr("height",nodeMenuCloseHeight)
         .attr("width",nodeMenuCloseWidth)
         .attr("fill","white")
-        .attr("transform",`translate(96.75,-19.5) rotate(-45)`);
+        .attr
+        (
+            "transform",
+            d =>
+            {
+                return `translate(${obtainNodeXCoordinate(d,96.75)},${obtainNodeYCoordinate(d,-19.5)}) rotate(-45)`
+            }
+        );
 
     container.append("circle")
         .attr("r",nodeMenuCloseRadius)
-        .attr("cy",-(nodeMenuFontSize+nodeMenuPadding))
-        .attr("cx",nodeMenuWidth)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeMenuWidth)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,-(nodeMenuFontSize+nodeMenuPadding))})
         .attr("fill","white")
         .attr("stroke","white")
         .attr("stroke-width",nodeMenuBorder)
@@ -79,16 +95,16 @@ const generateNodeMenuShadowElements = (container,elements) =>
         .attr("stroke-width",nodeMenuBorder+1)
         .attr("rx",2)
         .attr("ry",2)
-        .attr("x",1)
-        .attr("y",-(nodeMenuFontSize+nodeMenuPadding)+1)
+        .attr("x",d=>{return obtainNodeXCoordinate(d,1)})
+        .attr("y",d=>{return obtainNodeYCoordinate(d,-(nodeMenuFontSize+nodeMenuPadding)+1)})
         .attr("opacity",0.25)
         .attr("width",nodeMenuWidth)
         .attr("height",nodeMenuPadding*2 + (nodeMenuFontSize + nodeMenuPadding)*elements);
 
     container.append("circle")
         .attr("r",nodeMenuCloseRadius+0.5)
-        .attr("cy",-(nodeMenuFontSize+nodeMenuPadding)+1)
-        .attr("cx",nodeMenuWidth+1)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeMenuWidth+1)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,-(nodeMenuFontSize+nodeMenuPadding)+1)})
         .attr("opacity",0.25)
         .attr("fill","black")
         .attr("stroke","black")
@@ -102,8 +118,8 @@ const generateNodeMenuItem = (container,text,action,offset) =>
         .text(text)
         .attr("text-anchor","middle")
         .attr("font-size",nodeMenuFontSize)
-        .attr("x",nodeMenuWidth/2)
-        .attr("y",offset*nodeMenuActionOffset)
+        .attr("x",d=>{return obtainNodeXCoordinate(d,nodeMenuWidth/2)})
+        .attr("y",d=>{return obtainNodeYCoordinate(d,offset*nodeMenuActionOffset)})
         .attr("onclick",action);
 }
 
