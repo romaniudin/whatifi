@@ -26,6 +26,7 @@ app.get("/items/:account",decodeToken,getItemsAPI);
 
 app.use("/item/:account",setCorsHeaders);
 app.use("/item/:account",bodyParser.json(),parseErrorHandler);
+app.get("/item/:account",decodeToken,getItemsAPI);
 app.post("/item/:account",decodeToken,saveItemAPI);
 app.put("/item/:account",decodeToken,updateItemAPI);
 app.delete("/item/:account",decodeToken,deleteItemAPI);
