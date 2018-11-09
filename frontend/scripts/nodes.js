@@ -344,6 +344,7 @@ const findFinancialValues = (allNodes) =>
 
 const compareChildNodes = (nodeId) =>
 {
+    unhighlightAllNodes();
     const finances = [];
     const node = nodes[nodeId];
 
@@ -369,7 +370,8 @@ const compareChildNodes = (nodeId) =>
             finances.push
             (
                 {
-                    "identifier":childNode.nodeName,
+                    "identifier":childNodeId,
+                    "option":childNode.nodeName,
                     "finance":findFinancialValues([childNodeId]),
                     "nodes":[childNodeId]
                 }

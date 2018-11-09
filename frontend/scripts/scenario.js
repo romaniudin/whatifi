@@ -107,7 +107,7 @@ const bestScenario = (options,monthly=true) =>
     (
         scenario =>
         {
-            if (scenario.identifier == options[0].option) {best = scenario}
+            if (scenario.identifier == options[0].identifier) {best = scenario}
         }
     );
 
@@ -119,19 +119,13 @@ const highlightBestScenario = (options) =>
 {
     if (options.length < 2 || !options) return;
     const toHighlight = bestScenario(options).nodes;
+    unhighlightAllNodes();
     toHighlight.map
     (
         nodeId =>
         {
-            selectNode(nodeId);
+            highlightNode(nodeId);
         }
     )
-    if (currentBest != toHighlight)
-    {
-        const start = toHighlight[0];
-        const end = toHighlight[toHighlight.length-1]
-
-        startReverseTraverse( nodes[start].level > nodes[end].level ? start : end,false,true);
-    }
     currentBest = toHighlight;
 }
