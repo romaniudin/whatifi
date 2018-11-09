@@ -275,20 +275,40 @@ const unselectAllNodes = () =>
 }
 
 let highlightedNodes = [];
-const highlightNode = (nodeId) =>
+const toggleNodeHighlight = (nodeId) =>
 {
     const node = nodes[nodeId];
     node.highlighted = !node.highlighted;
 
     if (node.highlighted)
     {
-        highlightedNodes.push(nodeId);
+        highlightNode(nodeId);
     }
     else
     {
-        let i = highlightedNodes.indexOf(nodeId);
-        if (i > -1) {highlightedNodes.splice(i,1);};
+        unhighlightNode(nodeId);
     }
+}
+
+const highlightNode = (nodeId) =>
+{
+    const node = nodes[nodeId];
+    if (!node.highlighted)
+    {
+        node.highlighted = true;
+        highlightedNodes.push(nodeId);
+    }
+
+    renderNodeHighlight(nodeId);
+}
+
+const unhighlightNode = (nodeId) =>
+{
+    const node = nodes[nodeId];
+    node.highlighted = false;
+
+    let i = highlightedNodes.indexOf(nodeId);
+    if (i > -1) {highlightedNodes.splice(i,1);};
 
     renderNodeHighlight(nodeId);
 }
@@ -308,10 +328,16 @@ const unhighlightAllNodes = () =>
 
 const flashNode = (nodeId,flash=0) =>
 {
+    if (flash == 0) unhighlightNode(nodeId);
+
     if (flash < 6)
     {
-        highlightNode(nodeId);
+        toggleNodeHighlight(nodeId);
         setTimeout(() => {flashNode(nodeId,flash+1);},250);
+    }
+    else
+    {
+        unhighlightNode(nodeId);
     }
 } 
 
@@ -387,7 +413,7 @@ const reverseTraverse = (nodeId,traversedNodes,showGraph=true,fastTraverse=false
 {
     const node = nodes[nodeId];
     const traverseDelay = fastTraverse ? 0 : animationDelay;
-    highlightNode(nodeId);
+    toggleNodeHighlight(nodeId);
     selectNode(nodeId);
     traversedNodes.push(nodeId);
     if
@@ -408,8 +434,8 @@ const reverseTraverse = (nodeId,traversedNodes,showGraph=true,fastTraverse=false
         const finance = findFinancialValues(traversedNodes);
         if (finance.length > 0 && showGraph)
         {
-            currentScenario = [finance];
-            renderGraph([{"identifier":"Current Option","finance":finance}]);
+            currentScenario = [{"identifier":"current-option","option":"Current Option","finance":finance,"nodes":traversedNodes}];
+            renderGraph(currentScenario);
         }
     }
     else if (node["parentNodes"].length > 1)
@@ -457,10 +483,10 @@ const startForwardTraverse = (nodeId) =>
     let count = 0;
     allOptions.map
     (
-        option =>
+        (option,i) =>
         {
             count += 1;
-            allFinances.push({"identifier":`Option ${count}`,"finance":findFinancialValues(option),"nodes":option});
+            allFinances.push({"option":`Option ${count}`,"identifier":`option-${i}`,"finance":findFinancialValues(option),"nodes":option});
         }
     );
     currentScenario = allFinances;

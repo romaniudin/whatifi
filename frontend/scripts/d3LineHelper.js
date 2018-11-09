@@ -226,10 +226,14 @@ const selectDataPoints = (d) =>
         .attr("stroke-width",1);
 
     highlightBestScenario(displayedOptions);
+    const best = bestScenario(displayedOptions);
+    if (best)
+    {
+        d3.selectAll(`.line-${bestScenario(displayedOptions).identifier.toLowerCase().split(" ").join("_")}`)
+            .attr("stroke","white")
+            .attr("stroke-width",4);
+    }
 
-    d3.selectAll(`.line-${bestScenario(displayedOptions).identifier.toLowerCase().split(" ").join("_")}`)
-        .attr("stroke","white")
-        .attr("stroke-width",4);
     return displayedOptions;
 }
 

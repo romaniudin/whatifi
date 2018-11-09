@@ -89,6 +89,8 @@ const compareSaved = () =>
 
 const bestScenario = (options,monthly=true) =>
 {
+    if (options.length == 1) return options[0];
+
     options.sort
     (
         (a,b) =>
