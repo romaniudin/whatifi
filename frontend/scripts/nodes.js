@@ -274,31 +274,23 @@ const unselectAllNodes = () =>
     render(false);
 }
 
-let highlightedNodes = [];
 const toggleNodeHighlight = (nodeId) =>
 {
     const node = nodes[nodeId];
-    node.highlighted = !node.highlighted;
-
     if (node.highlighted)
     {
-        highlightNode(nodeId);
+        unhighlightNode(nodeId);
     }
     else
     {
-        unhighlightNode(nodeId);
+        highlightNode(nodeId);
     }
 }
 
 const highlightNode = (nodeId) =>
 {
     const node = nodes[nodeId];
-    if (!node.highlighted)
-    {
-        node.highlighted = true;
-        highlightedNodes.push(nodeId);
-    }
-
+    node.highlighted = true;
     renderNodeHighlight(nodeId);
 }
 
@@ -306,24 +298,18 @@ const unhighlightNode = (nodeId) =>
 {
     const node = nodes[nodeId];
     node.highlighted = false;
-
-    let i = highlightedNodes.indexOf(nodeId);
-    if (i > -1) {highlightedNodes.splice(i,1);};
-
     renderNodeHighlight(nodeId);
 }
 
 const unhighlightAllNodes = () =>
 {
-    highlightedNodes.map
+    Object.keys(nodes).map
     (
         (nodeId) =>
         {
-            nodes[nodeId]["highlighted"] = false;
-            renderNodeHighlight(nodeId);
+            unhighlightNode(nodeId);
         }
     );
-    highlightedNodes = [];
 }
 
 const flashNode = (nodeId,flash=0) =>
