@@ -2,7 +2,6 @@ const {async_collection} = require("./apiHelper");
 
 const checkRequired = (item,type,required) =>
 {
-    console.log(item,type,required);
     const missing = [];
 
     const allKeys = Object.keys(item);
@@ -122,45 +121,28 @@ const getItems = async (account,query) =>
     }
 
     let collections = {};
-    let allCollections = [];
     if (type == null || type == "all")
     {
-        allCollections = Object.keys(itemVerification);
+        const allCollections = Object.keys(itemVerification);
+        for(let i in allCollections)
+        {
+            const collection = await async_collection(allCollections[i]);
+            const items = await collection.find({"account":account}).toArray();
+            collections[allCollections[i]] = items;
+        }
     }
     else
     {
-        allCollections.push(type);
+        const collectionQuery = query;
+        delete collectionQuery["type"];
+        collectionQuery["account"] = account;
+
+        const collection = await async_collection(type);
+        const items = await collection.find(collectionQuery).toArray();
+        collections[type] = items;
     }
 
-    for(let i in allCollections)
-    {
-        const collection = await async_collection(allCollections[i]);
-        const items = await collection.find({"account":account}).toArray();
-        collections[allCollections[i]] = items;
-    }
-
-    let allItems = {};
-    for (let i in collections)
-    {
-        try
-        {
-            const identifier = query["identifier"];
-            const items = collections[i];
-
-            if (identifier && items["identifier"] != identifier)
-            {
-                continue;
-            }
-
-            allItems[i] = items;
-        }
-        catch (error)
-        {
-            console.log(error);
-        }
-    }
-
-    return allItems;
+    return collections;
 }
 
 const saveItem = async (item,account,update) =>

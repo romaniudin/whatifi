@@ -185,6 +185,8 @@ const deleteItemAPI = async (req,res) =>
             {
                 "success":true,
                 "status":200,
+                "message":"Deleted item",
+                "info":{"type":req.query["type"],"identifier":req.query["identifier"]}
             }
         );
     }
