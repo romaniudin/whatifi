@@ -5,12 +5,17 @@ const buttonHeight = 25;
 const scenarioNameLimit = 15;
 
 let scenarioCanvas;
-let scenarioDisplayMonthly = true;
+let scenarioDisplayMonthly = false;
 
 const toggleScenarioDisplay = () =>
 {
     scenarioDisplayMonthly = !scenarioDisplayMonthly;
-    d3.select("#scenario-show_monthly").text(scenarioDisplayMonthly ? "Monthly Total" : "Cummulative Total");
+    renderScenarioToggle();
+}
+
+const renderScenarioToggle = () =>
+{
+    d3.select("#scenario-scenario-toggle").text(scenarioDisplayMonthly ? "Monthly Total" : "Cummulative Total");
     renderGraph(currentScenario,"",true);
 }
 
@@ -25,14 +30,14 @@ const renderScenarioActions = () =>
     const actions = [];
     //actions.push({"name":"Save Scenario","action":"addScenario","arg":""});
     //actions.push({"name":"Compare Saves","action":"compareSaved","arg":""});
-    actions.push({"name":"Show Monthly","action":"toggleScenarioDisplay","arg":"","container":"#whatifi-line-graph-information-title-header"});
+    actions.push({"name":scenarioDisplayMonthly ? "Monthly Total" : "Cummulative Total","identifier":"scenario-toggle","action":"toggleScenarioDisplay","arg":"","container":"#whatifi-line-graph-information-title-header"});
 
     for (const i in actions)
     {
         const action = actions[i];
         const container = d3.select(action.container);
         container.append("div")
-            .attr("id",`scenario-${action.name.toLowerCase().split(" ").join("_")}`)
+            .attr("id",`scenario-${action.identifier.toLowerCase().split(" ").join("_")}`)
             .attr("width","100%")
             .attr("onclick",`${action.action}()`)
             .attr("align","middle")
