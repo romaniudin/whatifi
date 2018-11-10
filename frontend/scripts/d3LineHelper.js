@@ -158,23 +158,19 @@ const renderGraph = (request,title="",toggled=false) =>
                 lastSelected = d;
                 const displayedOptions = selectDataPoints(d);
             }
-        )
-        .on("mouseout",
-            (d) =>
-            {
-            }
         );
 
     showLineGraphDisplay();
     enableLineGraphDetails();
 
-    resetGraphDetails();
-    if (!toggled && !lastSelected)
+    if (toggled && lastSelected)
     {
-        lastSelected = null;
+        d3.selectAll("#whatifi-graph-information-header .col").style("display","block");
+        selectDataPoints(lastSelected);
     }
     else
     {
+        lastSelected = new Date(xScale.domain()[1]);
         selectDataPoints(lastSelected);
     }
 }

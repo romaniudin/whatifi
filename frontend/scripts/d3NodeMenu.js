@@ -161,6 +161,6 @@ const nodeMenuCloseAll = () =>
 const nodeMenuGenerator =
 {
     "me":[generateNodeMenu_traverseAll,generateNodeMenu_editDetails],
-    "group":[generateNodeMenu_toggle,generateNodeMenu_traverse,generateNodeMenu_compareChildren,generateNodeMenu_editDetails],
+    "group":[generateNodeMenu_toggle,generateNodeMenu_compareChildren,generateNodeMenu_editDetails],
     "default":[generateNodeMenu_toggle,generateNodeMenu_traverse,generateNodeMenu_editDetails],
 }
