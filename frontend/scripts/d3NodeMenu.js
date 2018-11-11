@@ -148,6 +148,11 @@ const generateNodeMenu_editDetails = (container,nodeId,offset=0) =>
     generateNodeMenuItem(container,"Edit Details",`onContextMenu(\"${nodeId}\");nodeMenuCloseAll();`,offset);
 }
 
+const generateNodeMenu_collapseChildren = (container,nodeId,offset=0) =>
+{
+    generateNodeMenuItem(container,"Collapse Group",`collapseChildNodes(\"${nodeId}\");nodeMenuCloseAll();`,offset);
+}
+
 const closeAll = () =>
 {
     nodeMenuCloseAll();
@@ -161,6 +166,6 @@ const nodeMenuCloseAll = () =>
 const nodeMenuGenerator =
 {
     "me":[generateNodeMenu_traverseAll,generateNodeMenu_editDetails],
-    "group":[generateNodeMenu_toggle,generateNodeMenu_compareChildren,generateNodeMenu_editDetails],
+    "group":[generateNodeMenu_compareChildren,generateNodeMenu_editDetails],
     "default":[generateNodeMenu_toggle,generateNodeMenu_traverse,generateNodeMenu_editDetails],
 }
