@@ -429,7 +429,7 @@ const createNodeExpandElements = (node) =>
 {
     const expandGroup = node.append("g")
         .attr("class","expand-group-element")
-        .attr("onclick",(d) => {return `collapseChildNodes("${d.nodeId}")`});
+        .attr("onclick",(d) => {if (d.type=="group") return `collapseChildNodes("${d.nodeId}")`;else return ""});
 
     expandGroup.append("circle")
         .attr("r",d => d.type == "group" ? 17 : 0)
@@ -442,7 +442,7 @@ const createNodeExpandElements = (node) =>
         .attr("r",d => d.type == "group" ? 15 : 0)
         .attr("fill",d => nodeImageBackgroundColour(d))
         .attr("stroke",d => nodeImageBorderColour(d))
-        .attr("stroke-width",4)
+        .attr("stroke-width",d => d.type == "group" ? 4 : 0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,50)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,50)});
 
