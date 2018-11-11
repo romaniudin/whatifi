@@ -15,8 +15,13 @@ const toggleScenarioDisplay = () =>
 
 const renderScenarioToggle = () =>
 {
-    d3.select("#scenario-scenario-toggle").text(scenarioDisplayMonthly ? "Monthly Total" : "Cummulative Total");
+    d3.select("#scenario-scenario-toggle").text(obtainToggleText());
     renderGraph(currentScenario,"",true);
+}
+
+const obtainToggleText = () =>
+{
+    return `${scenarioDisplayMonthly ? "Monthly" : "Cummulative"}`;
 }
 
 const renderScenario = () =>
@@ -30,7 +35,7 @@ const renderScenarioActions = () =>
     const actions = [];
     //actions.push({"name":"Save Scenario","action":"addScenario","arg":""});
     //actions.push({"name":"Compare Saves","action":"compareSaved","arg":""});
-    actions.push({"name":scenarioDisplayMonthly ? "Monthly Total" : "Cummulative Total","identifier":"scenario-toggle","action":"toggleScenarioDisplay","arg":"","container":"#whatifi-line-graph-information-title-header"});
+    actions.push({"name":obtainToggleText(),"identifier":"scenario-toggle","action":"toggleScenarioDisplay","arg":"","container":"#whatifi-line-graph-information-title-header"});
 
     for (const i in actions)
     {

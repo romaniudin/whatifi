@@ -15,6 +15,19 @@ const linkTraversedColour = "black";
 const tooltipMinLength = 0;
 const tooltipTransitionDelay = 200;
 
+const layerPriority = {"default":0,"group":1,"selected":2}
+const obtainNodeLayer = (node) =>
+{
+    if (node.type == "group")
+    {
+        return layerPriority["group"];
+    }
+    else
+    {
+        return layerPriority[node.selected ? "selected" : "default"];
+    }
+}
+
 const render = (newCanvas=true) =>
 {
     let allNodes = [];
@@ -28,13 +41,17 @@ const render = (newCanvas=true) =>
     allNodes.map(node=>balanceNodes(balancedNodes,node));
     const range = d3.extent(allNodes,(node) => node.x);
     const shift = range[1] - range[0];
+
+    const nodeLayers = [[],[],[]];
     allNodes.map
     (
         (node) =>
         {
             node.x += nodeCanvasHeight/2;
+            nodeLayers[obtainNodeLayer(node)].push(node);
         }
     );
+
     const yRange = d3.extent(allNodes, node => node.x);
     const xRange = d3.extent(allNodes, node => (node.level+0.5)*nodeDistance);
 
@@ -54,16 +71,28 @@ const render = (newCanvas=true) =>
         .enter()
         .append("g");
 
-    const nodePlacements = nodeCanvas.selectAll("node")
-        .data(allNodes)
-        .enter()
-        .append("g")
-        .attr("id",(d) => {return `${d.nodeId}-element`});
-
-    createNodeShadowElements(nodePlacements);
+    const nodeLayersPlacements = nodeLayers.map
+    (
+        layers =>
+        {
+            return nodeCanvas.selectAll("node")
+            .data(layers)
+            .enter()
+            .append("g")
+            .attr("id",(d) => {return `${d.nodeId}-element`});
+        }
+    );
 
     createLinkElements(linkPlacements);
-    createNodeElements(nodePlacements);
+
+    nodeLayersPlacements.map
+    (
+        nodePlacements =>
+        {
+            createNodeElements(nodePlacements);
+        }
+    );
+
     createNodeOverlay("node-graph-viewbox");
 }
 
@@ -154,6 +183,7 @@ const generateLinks = (balancedNodes) =>
     for (const nodeId in balancedNodes)
     {
         const node = balancedNodes[nodeId];
+        const parentNode = balancedNodes[node["parentNodes"][0]];
 
         for (const i in node["childrenNodes"])
         {
@@ -162,10 +192,11 @@ const generateLinks = (balancedNodes) =>
 
             link["from"] = node.nodeId;
             link["to"] = childNode.nodeId;
-            link["x1"] = node.x;
-            link["y1"] = (node.level+0.5)*nodeDistance;
-            link["x2"] = childNode.x;
-            link["y2"] = (childNode.level+0.5)*nodeDistance;
+            link["x1"] = obtainNodeYCoordinate(node);
+            link["y1"] = obtainNodeXCoordinate(node);
+            link["x2"] = obtainNodeYCoordinate(childNode);
+            link["y2"] = obtainNodeXCoordinate(childNode);
+
             allLinks.push(link);
         }
     }
@@ -184,20 +215,20 @@ const renderNodeHighlight = (nodeId) =>
 {
     const node = nodes[nodeId];
     d3.select(`#node-graph svg #node-graph-viewbox #${nodeId}-element .main-node`)
-        .attr("fill", node.highlighted ? nodeHighlightedColour : "white");
+        .attr("fill", node.highlighted ? nodeHighlightedColour : nodeBackgroundColour(node))
 }
 
 const renderLinkTraverse = (fromNodeId,toNodeId) =>
 {
     const inner = d3.selectAll(`#node-graph svg #node-graph-viewbox g line#from_${fromNodeId}_to_${toNodeId}_inner`)
         .attr("stroke","steelblue")
-        .attr("opacity",0.8);
+        .attr("opacity",1);
 }
 
 const removeAllLinkTraverse = () =>
 {
     d3.selectAll(".link-inner")
-        .attr("opacity",0.25);
+        .attr("stroke","#bfcbd5");
 }
 
 const updateNodeSelected = (nodeId,selected) =>
@@ -245,92 +276,51 @@ const onContextMenu = (nodeId) =>
     }
 }
 
-const obtainNodeXCoordinate = (node,offset) =>
+const obtainNodeXCoordinate = (node,offset=0) =>
 {
-    return (node.level+0.5)*nodeDistance+offset;
+    let level = node.level;
+    minimizedNodes.map
+    (
+        minimized =>
+        {
+            if (node.level > minimized)
+            {
+                level -= 1;
+            }
+        }
+    )
+
+    return (level+0.5)*nodeDistance+offset;
 }
 
-const obtainNodeYCoordinate = (node,offset) =>
+const obtainNodeYCoordinate = (node,offset=0) =>
 {
-    return node.x+offset;
+    if (node.minimized && node.type != "group")
+    {
+        const parentNode = nodes[node.parentNodes[0]];
+        const placement = parentNode.x+offset;
+        return placement;
+    }
+    else
+    {
+        return node.x+offset;
+    }
 }
 
 const createNodeElements = (node) =>
 {
-    node.append("circle")
-        .attr("class","main-node")
-        .attr("r",40)
-        .attr("fill",d => nodeBackgroundColour(d))
-        .attr("stroke",d => nodeBorderColour(d))
-        .attr("stroke-width",4)
-        .attr("cx",d=>{return obtainNodeXCoordinate(d,0)})
-        .attr("cy",d=>{return obtainNodeYCoordinate(d,0)})
-        .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`})
-        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`});
-
-    node.append("circle")
-        .attr("class","img-node")
-        .attr("r",15)
-        .attr("fill",d => nodeImageBackgroundColour(d))
-        .attr("stroke",d => nodeImageBorderColour(d))
-        .attr("stroke-width",4)
-        .attr("cx",d=>{return obtainNodeXCoordinate(d,30)})
-        .attr("cy",d=>{return obtainNodeYCoordinate(d,-30)})
-        .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`})
-        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`});
-
-    node.append("circle")
-        .attr("r",8)
-        .attr("fill","steelblue")
-        .attr("cx",`${nodeDistance/2}`)
-        .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeDistance/2)})
-        .attr("cy",d=>{return obtainNodeYCoordinate(d,0)})
-        .attr("opacity",(d)=>{if (d.type=="group") return 1;else return 0;});
-
-    const plusThickness = 2;
-    const plusHeight = 8;
-    node.append("rect")
-        .attr("fill","white")
-        .attr("stroke","white")
-        .attr("stroke-width",2)
-        .attr("width",plusThickness)
-        .attr("height",plusHeight)
-        .attr("x",d=>{return obtainNodeXCoordinate(d,nodeDistance/2-plusThickness/2)})
-        .attr("y",d=>{return obtainNodeYCoordinate(d,-plusHeight/2)})
-        .attr("opacity",(d)=>{if (d.type=="group") return 1;else return 0;});
-
-    node.append("rect")
-        .attr("fill","white")
-        .attr("stroke","white")
-        .attr("stroke-width",2)
-        .attr("width",plusHeight)
-        .attr("height",plusThickness)
-        .attr("x",d=>{return obtainNodeXCoordinate(d,nodeDistance/2-plusHeight/2)})
-        .attr("y",d=>{return obtainNodeYCoordinate(d,-plusThickness/2)})
-        .attr("opacity",(d)=>{if (d.type=="group") return 1;else return 0;});
-
-    node.append("circle")
-        .attr("class","add-node")
-        .attr("r",8)
-        .attr("fill","white")
-        .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeDistance/2)})
-        .attr("cy",d=>{return obtainNodeYCoordinate(d,0)})
-        .attr("opacity",0)
-        .attr("onclick",(d) => {if (d.type=="group") return `nodeOverlayAdd("${d.nodeId}")`;else return ""});
-
-    node.append("text")
-        .text(d=>d.nodeName)
-        .attr("class","node-name")
-        .attr("text-anchor","middle")
-        .attr("x",d=>{return obtainNodeXCoordinate(d,0)})
-        .attr("y",d=>{return obtainNodeYCoordinate(d,5)})
-        .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`})
-        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`});
+    createNodeMainElements(node);
+    createNodeAddElements(node);
+    createNodeExpandElements(node);
 }
 
-const createNodeShadowElements = (node) =>
+const createNodeMainElements = (node) =>
 {
-    node.append("circle")
+    const mainNode = node.append("g")
+        .attr("class","main-node-element")
+        .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`});
+
+    mainNode.append("circle")
         .attr("class","main-node-shadow")
         .attr("r",40)
         .attr("fill","black")
@@ -340,7 +330,7 @@ const createNodeShadowElements = (node) =>
         .attr("cx",d=>{return obtainNodeXCoordinate(d,2)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,2)});
 
-    node.append("circle")
+    mainNode.append("circle")
         .attr("class","img-node-shadow")
         .attr("r",15)
         .attr("fill","black")
@@ -350,13 +340,129 @@ const createNodeShadowElements = (node) =>
         .attr("cx",d=>{return obtainNodeXCoordinate(d,32)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,-28)});
 
-    node.append("circle")
+    mainNode.append("circle")
+        .attr("class","main-node")
+        .attr("r",40)
+        .attr("fill", d => d.highlighted ? nodeHighlightedColour : nodeBackgroundColour(d))
+        .attr("stroke",d => nodeBorderColour(d))
+        .attr("stroke-width",4)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,0)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,0)})
+        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`});
+
+    mainNode.append("circle")
+        .attr("class","img-node")
+        .attr("r",15)
+        .attr("fill", "white")
+        .attr("stroke",d => d.selected ? nodeSelectedBorderColour : nodeImageBorderColour(d))
+        .attr("stroke-width",4)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,30)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,-30)})
+        .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`})
+        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`});
+
+    mainNode.append("text")
+        .text(d=>d.nodeName)
+        .attr("class","node-name")
+        .attr("text-anchor","middle")
+        .attr("x",d=>{return obtainNodeXCoordinate(d,0)})
+        .attr("y",d=>{return obtainNodeYCoordinate(d,5)})
+        .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`})
+        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`});
+}
+
+const createNodeAddElements = (node) =>
+{
+    const plusThickness = 2;
+    const plusHeight = 8;
+
+    const addNode = node.append("g")
+        .attr("class","add-child-element")
+        .attr("onclick",(d) => {if (d.type=="group") return `nodeOverlayAdd("${d.nodeId}")`;else return ""});
+
+    addNode.append("circle")
         .attr("class","add-node-shadow")
         .attr("r",8)
         .attr("fill","black")
         .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeDistance/2+1)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,1)})
         .attr("opacity",(d)=>{if (d.type=="group") return 0.25;else return 0;});
+
+    addNode.append("circle")
+        .attr("r",d => d.type == "group" ? 8 : 0)
+        .attr("fill","steelblue")
+        .attr("cx",`${nodeDistance/2}`)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeDistance/2)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,0)})
+        .attr("opacity",1);
+
+    addNode.append("rect")
+        .attr("fill","white")
+        .attr("stroke","white")
+        .attr("stroke-width",2)
+        .attr("width",d => d.type == "group" ? plusThickness : 0)
+        .attr("height",d => d.type == "group" ? plusHeight : 0)
+        .attr("x",d=>{return obtainNodeXCoordinate(d,nodeDistance/2-plusThickness/2)})
+        .attr("y",d=>{return obtainNodeYCoordinate(d,-plusHeight/2)})
+        .attr("opacity",(d)=>{if (d.type=="group") return 1;else return 0;});
+
+    addNode.append("rect")
+        .attr("fill","white")
+        .attr("stroke","white")
+        .attr("stroke-width",2)
+        .attr("width",d => d.type == "group" ? plusHeight : 0)
+        .attr("height",d => d.type == "group" ? plusThickness : 0)
+        .attr("x",d=>{return obtainNodeXCoordinate(d,nodeDistance/2-plusHeight/2)})
+        .attr("y",d=>{return obtainNodeYCoordinate(d,-plusThickness/2)})
+        .attr("opacity",(d)=>{if (d.type=="group") return 1;else return 0;});
+
+    addNode.append("circle")
+        .attr("class","add-node")
+        .attr("r",d => d.type == "group" ? 8 : 0)
+        .attr("fill","white")
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeDistance/2)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,0)})
+        .attr("opacity",0);
+}
+
+const createNodeExpandElements = (node) =>
+{
+    const expandGroup = node.append("g")
+        .attr("class","expand-group-element")
+        .attr("onclick",(d) => {return `collapseChildNodes("${d.nodeId}")`});
+
+    expandGroup.append("circle")
+        .attr("r",d => d.type == "group" ? 17 : 0)
+        .attr("fill","black")
+        .attr("opacity",0.25)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,52)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,52)});
+
+    expandGroup.append("circle")
+        .attr("r",d => d.type == "group" ? 15 : 0)
+        .attr("fill",d => nodeImageBackgroundColour(d))
+        .attr("stroke",d => nodeImageBorderColour(d))
+        .attr("stroke-width",4)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,50)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,50)});
+
+    expandGroup.append("circle")
+        .attr("fill",d => nodeImageBorderColour(d))
+        .attr("r",d => d.type == "group" ? 2 : 0)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d, d.minimized ? 50 : 56)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d, d.minimized ? 56 : 50)});
+
+    expandGroup.append("circle")
+        .attr("fill",d => nodeImageBorderColour(d))
+        .attr("r",d => d.type == "group" ? 2 : 0)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,50)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,50)});
+
+    expandGroup.append("circle")
+        .attr("fill",d => nodeImageBorderColour(d))
+        .attr("r",d => d.type == "group" ? 2 : 0)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d, d.minimized ? 50 : 44)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d, d.minimized ? 44 : 50)});
 }
 
 const createLinkElements = (link) =>
@@ -364,9 +470,9 @@ const createLinkElements = (link) =>
     link.append("line")
         .attr("id",d => `from_${d.from}_to_${d.to}_inner`)
         .attr("class","link-inner")
-        .attr("stroke","steelblue")
+        .attr("stroke","#bfcbd5")
         .attr("stroke-width",4)
-        .attr("opacity",0.25)
+        .attr("opacity",1)
         .attr("x1",(d) => {return d.y1;})
         .attr("y1",(d) => {return d.x1;})
         .attr("x2",(d) => {return d.y2;})

@@ -395,6 +395,54 @@ const compareChildNodes = (nodeId) =>
     renderGraph(finances);
 }
 
+const minimizedNodes = [];
+const collapseChildNodes = (nodeId) =>
+{
+    const node = nodes[nodeId];
+
+    let childSelected = false;
+    node.childrenNodes.map
+    (
+        (childNodeId) =>
+        {
+            childSelected |= nodes[childNodeId].selected;
+        }
+    );
+
+    if (!childSelected)
+    {
+        toast("Please select one of these nodes before minimizing (right click)");
+        node["childrenNodes"].map( (nodeId) => {flashNode(nodeId)} );
+        return;
+    }
+
+    node["minimized"] = !node["minimized"];
+    const level = node.level;
+    if (node["minimized"])
+    {
+        minimizedNodes.push(level);
+    }
+    else
+    {
+        const index = minimizedNodes.indexOf(level)
+        if (index != -1)
+        {
+            minimizedNodes.splice(index,1);
+        }
+    }
+
+    node.childrenNodes.map
+    (
+        (childNodeId) =>
+        {
+            const childNode = nodes[childNodeId];
+            childNode["minimized"] = node["minimized"];
+        }
+    );
+
+    render(false);
+}
+
 const reverseTraverse = (nodeId,traversedNodes,showGraph=true,fastTraverse=false) =>
 {
     const node = nodes[nodeId];
