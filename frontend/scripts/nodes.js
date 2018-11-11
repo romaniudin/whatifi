@@ -399,6 +399,7 @@ const minimizedNodes = [];
 const collapseChildNodes = (nodeId) =>
 {
     const node = nodes[nodeId];
+    if (node.childrenNodes.length == 1) selectNode(node.childrenNodes[0]);
 
     let childSelected = false;
     node.childrenNodes.map
