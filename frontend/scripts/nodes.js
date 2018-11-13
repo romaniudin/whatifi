@@ -3,6 +3,7 @@ let currentTraverse;
 
 const animationDelay = 150;
 const nodes = {};
+const orderedNodes = [];
 const nodeTypes =
 [
     "me",
@@ -54,6 +55,8 @@ const addChild = (nodeId,parentNodeId,inherit=false,setInherit=false) =>
     parentNode["childrenNodes"].push(nodeId);
     node["parentNodes"].push(parentNodeId);
     node["level"] = parentNode["level"]+1;
+
+    if (orderedNodes.indexOf(nodeId) == -1) orderedNodes.push(nodeId);
 /*
     const levelNodes = [];
     for (const nodeId in nodes)
@@ -155,6 +158,7 @@ const addNode = (nodeName,nodeType,nodeDetails) =>
     }
 
     nodes[nodeId] = node;
+    if (orderedNodes.indexOf(nodeId) == -1) orderedNodes.push(nodeId);
 
     return nodeId;
 }
@@ -399,22 +403,37 @@ const minimizedNodes = [];
 const collapseChildNodes = (nodeId) =>
 {
     const node = nodes[nodeId];
-    if (node.childrenNodes.length == 1) selectNode(node.childrenNodes[0]);
 
     let childSelected = false;
+    let isOnlyChildAGroup = true;
     node.childrenNodes.map
     (
         (childNodeId) =>
         {
             childSelected |= nodes[childNodeId].selected;
+            isOnlyChildAGroup &= nodes[childNodeId].type == "group";
         }
     );
 
+    if (node.childrenNodes.length == 0 || (node.childrenNodes.length == 1 && isOnlyChildAGroup))
+    {
+        toast("Please add a child node before minimizing");
+        flashNode(nodeId);
+        return;
+    }
+
     if (!childSelected)
     {
-        toast("Please select one of these nodes before minimizing (right click)");
-        node["childrenNodes"].map( (nodeId) => {flashNode(nodeId)} );
-        return;
+        if (node.childrenNodes.length == 1)
+        {
+            selectNode(node.childrenNodes[0]);
+        }
+        else
+        {
+            toast("Please select one of these nodes before minimizing (right click)");
+            node["childrenNodes"].map( (nodeId) => {flashNode(nodeId)} );
+            return;
+        }
     }
 
     node["minimized"] = !node["minimized"];
