@@ -28,6 +28,7 @@ const obtainNodeLayer = (node) =>
     }
 }
 
+let previousLinks = {};
 const render = (newCanvas=true) =>
 {
     let allNodes = [];
@@ -35,55 +36,55 @@ const render = (newCanvas=true) =>
     {
         allNodes.push(nodes[nodeId]);
     }
-    allNodes = allNodes.sort(compareNodeLevels);
 
     balancedNodes = [];
+    allNodes = allNodes.sort(compareNodeLevels);
     allNodes.map(node=>balanceNodes(balancedNodes,node));
+
     const range = d3.extent(allNodes,(node) => node.x);
     const shift = range[1] - range[0];
 
-    const nodeLayers = [[],[],[]];
     const layeredNodes = orderedNodes.map
     (
-        node =>
+        nodeId =>
         {
-            return nodes[node];
-        }
-    )
-    allNodes.map
-    (
-        (node) =>
-        {
+            const node = nodes[nodeId];
             node.x += nodeCanvasHeight/2;
-            nodeLayers[obtainNodeLayer(node)].push(node);
             return node;
         }
-    );
+    )
 
     const yRange = d3.extent(allNodes, node => node.x);
     const xRange = d3.extent(allNodes, node => (node.level+0.5)*nodeDistance);
-
-    const allLinks = generateLinks(nodes);
-
     if (newCanvas)
     {
         createCanvas(xRange,yRange);
     }
 
-    d3.selectAll(".link-inner").remove();
-    const linkPlacements = nodeCanvas.selectAll("link")
-        .data(allLinks)
-    const oldLinks = linkPlacements.exit().remove();
-    const newLinks = linkPlacements.enter()
-        .append("g");
+    const allLinks = generateLinks(nodes);
+    const removedLinks = [];
+    const newLinks = Object.keys(generateLinks(nodes));
+    const existingLinks = [];
 
-    console.log(oldLinks,newLinks);
+    Object.keys(previousLinks).map
+    (
+        link =>
+        {
+            const index = newLinks.indexOf(link);
+            if (index == -1)
+            {
+                removedLinks.push(link);
+            }
+            else
+            {
+                existingLinks.push(link);
+                newLinks.splice(index,1);
+            }
+        }
+    );
 
-    createLinkElements(newLinks);
-
-    nodeCanvas.selectAll(".node")
-        .data(layeredNodes)
-        .exit().remove();
+    previousLinks = {};
+    existingLinks.concat(newLinks).map(link=>{previousLinks[link] = allLinks[link]});
 
     const newNodes = nodeCanvas.selectAll(".node")
         .data(layeredNodes)
@@ -96,6 +97,8 @@ const render = (newCanvas=true) =>
     positionNodeElements();
 
     createNodeOverlay("node-graph-viewbox");
+
+    updateLinkElements(newLinks,existingLinks,removedLinks);
 }
 
 let lastValidZoom = 1;
@@ -137,6 +140,8 @@ const createCanvas = (xRange,yRange) =>
                 }
             )
     );
+
+    nodeCanvas.append("g").attr("id","link-container");
 }
 
 const clearCanvas = (canvas) =>
@@ -180,7 +185,7 @@ const balanceNodes = (allNodes,node) =>
 
 const generateLinks = (balancedNodes) =>
 {
-    const allLinks = [];
+    const allLinks = {};
 
     for (const nodeId in balancedNodes)
     {
@@ -199,7 +204,9 @@ const generateLinks = (balancedNodes) =>
             link["x2"] = obtainNodeYCoordinate(childNode);
             link["y2"] = obtainNodeXCoordinate(childNode);
 
-            allLinks.push(link);
+            if (link["x1"] == link["x2"] && link["y1"] == link["y2"]) continue;
+
+            allLinks[`from_${node.nodeId}_to_${childNode.nodeId}`] = link;
         }
     }
 
@@ -439,7 +446,7 @@ const positionNodeAddElements = () =>
 {
     d3.selectAll(".add-node-shadow")
         .transition()
-        .attr("r",8)
+        .attr("r",d => d.type == "group" ? 8 : 0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeDistance/2+1)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,1)});
 
@@ -534,18 +541,57 @@ const positionNodeExpandElements = (node) =>
         .attr("cy",d=>{return obtainNodeYCoordinate(d, d.minimized ? 44 : 50)});
 }
 
-const createLinkElements = (link) =>
+const updateLinkElements = (newLinks,currentLinks,removedLinks) =>
 {
-    link.append("line")
-        .attr("id",d => `from_${d.from}_to_${d.to}_inner`)
-        .attr("class","link-inner")
-        .attr("stroke","#bfcbd5")
-        .attr("stroke-width",4)
-        .attr("opacity",1)
-        .attr("x1",(d) => {return d.y1;})
-        .attr("y1",(d) => {return d.x1;})
-        .attr("x2",(d) => {return d.y2;})
-        .attr("y2",(d) => {return d.x2;});
+    removedLinks.map(link=>d3.selectAll(`#${link}`).remove());
+    newLinks.map
+    (
+        linkId =>
+        {
+            const link = previousLinks[linkId];
+            d3.select(`#link-container`)
+                .append("line")
+                .attr("id",linkId)
+                .attr("stroke","#bfcbd5")
+                .attr("stroke-width",4)
+                .attr("x1",link.y1)
+                .attr("y1",link.x1)
+                .attr("x2",link.y2)
+                .attr("y2",link.x2)
+                .attr("opacity",0);
+        }
+    );
+    currentLinks.map
+    (
+        linkId =>
+        {
+            const link = previousLinks[linkId];
+            const current = d3.select(`#${linkId}`);
+
+            const details =
+            {
+                "x1":current.attr("y1"),
+                "y1":current.attr("x1"),
+                "x2":current.attr("y2"),
+                "y2":current.attr("x2"),
+            }
+
+            current.attr("x1",link.y1)
+                .attr("y1",link.x1)
+                .attr("x2",link.y2)
+                .attr("y2",link.x2);
+
+            if (details.x1 != link.x1 || details.y1 != link.y1 || details.x2 != link.x2 || details.y2 != link.y2)
+            {
+                current.attr("opacity",0);
+            }
+
+
+
+        }
+    )
+
+    d3.selectAll("#link-container line").transition().attr("opacity",1);
 }
 
 const verifyNodeDetails = (nodeName,nodeValue,nodeFrequency,nodeStart,nodeEnd) =>

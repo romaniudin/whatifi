@@ -55,6 +55,7 @@ const addChild = (nodeId,parentNodeId,inherit=false,setInherit=false) =>
     parentNode["childrenNodes"].push(nodeId);
     node["parentNodes"].push(parentNodeId);
     node["level"] = parentNode["level"]+1;
+    node["minimized"] = parentNode["minimized"];
 
     if (orderedNodes.indexOf(nodeId) == -1) orderedNodes.push(nodeId);
 /*
