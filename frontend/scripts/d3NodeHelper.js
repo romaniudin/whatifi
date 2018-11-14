@@ -339,70 +339,88 @@ const createNodeMainElements = (node) =>
     mainNode.append("circle")
         .attr("class","main-node-shadow")
         .attr("fill","black")
-        .attr("opacity",0.25)
+        .attr("opacity",0)
         .attr("stroke","black")
-        .attr("stroke-width",5)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,2)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,2)});
 
     mainNode.append("circle")
         .attr("class","img-node-shadow")
         .attr("fill","black")
-        .attr("opacity",0.25)
+        .attr("opacity",0)
         .attr("stroke","black")
-        .attr("stroke-width",5)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,32)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,-28)});
 
     mainNode.append("circle")
         .attr("class","main-node")
         .attr("fill", d => d.highlighted ? nodeHighlightedColour : nodeBackgroundColour(d))
+        .attr("opacity",0)
         .attr("stroke",d => nodeBorderColour(d))
-        .attr("stroke-width",4)
-        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`});
+        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`})
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,0)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,0)});
 
     mainNode.append("circle")
         .attr("class","img-node")
         .attr("fill", "white")
+        .attr("opacity",0)
         .attr("stroke",d => d.selected ? nodeSelectedBorderColour : nodeImageBorderColour(d))
-        .attr("stroke-width",4)
         .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`})
-        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`});
+        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`})
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,30)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,-30)});
 
     mainNode.append("text")
         .attr("class","node-name")
         .attr("text-anchor","middle")
+        .attr("opacity",0)
         .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`})
-        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`});
+        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`})
+        .attr("x",d=>{return obtainNodeXCoordinate(d,0)})
+        .attr("y",d=>{return obtainNodeYCoordinate(d,5)});
 }
 
 const positionNodeMainElements = () =>
 {
     d3.selectAll(".main-node-shadow")
         .transition()
+        .attr("stroke-width",5)
+        .attr("opacity",0.25)
         .attr("r",d => d.minimized && !d.selected ? 0 : 40)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,2)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,2)});
 
     d3.selectAll(".img-node-shadow")
         .transition()
+        .attr("stroke-width",5)
+        .attr("opacity",0.25)
         .attr("r",d => d.minimized && !d.selected ? 0 :15)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,32)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,-28)});
 
     d3.selectAll(".main-node")
         .transition()
+        .attr("opacity",1)
+        .attr("stroke-width",4)
         .attr("r",d => d.minimized && !d.selected ? 0 :40)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,0)})
-        .attr("cy",d=>{return obtainNodeYCoordinate(d,0)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,0)});
 
     d3.selectAll(".img-node")
         .transition()
+        .attr("opacity",1)
+        .attr("stroke-width",4)
         .attr("r",d => d.minimized && !d.selected ? 0 :15)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,30)})
-        .attr("cy",d=>{return obtainNodeYCoordinate(d,-30)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,-30)});
 
     d3.selectAll(".node-name")
         .transition()
-        .text(d=> d. minimized && !d.selected ? "" : d.nodeName)
+        .attr("opacity",1)
+        .text(d=> d.minimized && !d.selected ? "" : d.nodeName)
         .attr("x",d=>{return obtainNodeXCoordinate(d,0)})
-        .attr("y",d=>{return obtainNodeYCoordinate(d,5)})
+        .attr("y",d=>{return obtainNodeYCoordinate(d,5)});
 }
 
 const plusThickness = 2;
@@ -411,35 +429,45 @@ const createNodeAddElements = (node) =>
 {
     const addNode = node.append("g")
         .attr("class","add-child-element")
-        .attr("onclick",(d) => {if (d.type=="group") return `nodeOverlayAdd("${d.nodeId}")`;else return ""});
+        .attr("onclick",(d) => {if (d.type=="group") return `nodeOverlayAdd("${d.nodeId}")`;else return ""})
 
     addNode.append("circle")
         .attr("class","add-node-shadow")
         .attr("fill","black")
-        .attr("opacity",(d)=>{if (d.type=="group") return 0.25;else return 0;});
+        .attr("opacity",(d)=>{if (d.type=="group") return 0.25;else return 0;})
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeDistance/2+1)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,1)});
 
     addNode.append("circle")
         .attr("class","add-child-plus-circle")
         .attr("fill","steelblue")
-        .attr("opacity",1);
+        .attr("opacity",1)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeDistance/2)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,0)});
 
     addNode.append("rect")
         .attr("class","add-child-plus-1")
         .attr("fill","white")
         .attr("stroke","white")
         .attr("stroke-width",2)
-        .attr("opacity",(d)=>{if (d.type=="group") return 1;else return 0;});
+        .attr("opacity",(d)=>{if (d.type=="group") return 1;else return 0;})
+        .attr("x",d=>{return obtainNodeXCoordinate(d,nodeDistance/2-plusThickness/2)})
+        .attr("y",d=>{return obtainNodeYCoordinate(d,-plusHeight/2)});
 
     addNode.append("rect")
         .attr("class","add-child-plus-2")
         .attr("fill","white")
         .attr("stroke","white")
         .attr("stroke-width",2)
-        .attr("opacity",(d)=>{if (d.type=="group") return 1;else return 0;});
+        .attr("opacity",(d)=>{if (d.type=="group") return 1;else return 0;})
+        .attr("x",d=>{return obtainNodeXCoordinate(d,nodeDistance/2-plusHeight/2)})
+        .attr("y",d=>{return obtainNodeYCoordinate(d,-plusThickness/2)});
 
     addNode.append("circle")
         .attr("class","add-node")
-        .attr("opacity",0);
+        .attr("opacity",0)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeDistance/2)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,0)});
 }
 
 const positionNodeAddElements = () =>
@@ -486,57 +514,67 @@ const createNodeExpandElements = (node) =>
 
     expandGroup.append("circle")
         .attr("class","expand-group-element-shadow")
-        .attr("r",d => d.type == "group" ? 17 : 0)
         .attr("fill","black")
-        .attr("opacity",0.25);
+        .attr("opacity",0.25)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,52)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,52)});
 
     expandGroup.append("circle")
         .attr("class","expand-group-ellipsis")
-        .attr("r",d => d.type == "group" ? 15 : 0)
         .attr("fill",d => nodeImageBackgroundColour(d))
         .attr("stroke",d => nodeImageBorderColour(d))
-        .attr("stroke-width",d => d.type == "group" ? 4 : 0);
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,50)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,50)});
 
     expandGroup.append("circle")
         .attr("class","expand-group-ellipsis-0")
         .attr("fill",d => nodeImageBorderColour(d))
-        .attr("r",d => d.type == "group" ? 2 : 0);
+        .attr("cx",d=>{return obtainNodeXCoordinate(d, d.minimized ? 50 : 56)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d, d.minimized ? 56 : 50)});
 
     expandGroup.append("circle")
         .attr("class","expand-group-ellipsis-1")
         .attr("fill",d => nodeImageBorderColour(d))
-        .attr("r",d => d.type == "group" ? 2 : 0);
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,50)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,50)});
 
     expandGroup.append("circle")
         .attr("class","expand-group-ellipsis-2")
         .attr("fill",d => nodeImageBorderColour(d))
-        .attr("r",d => d.type == "group" ? 2 : 0);
+        .attr("cx",d=>{return obtainNodeXCoordinate(d, d.minimized ? 50 : 44)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d, d.minimized ? 44 : 50)});
 }
 
 const positionNodeExpandElements = (node) =>
 {
     d3.selectAll(".expand-group-element-shadow")
         .transition()
+        .attr("r",d => d.type == "group" ? 17 : 0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,52)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,52)});
 
     d3.selectAll(".expand-group-ellipsis")
         .transition()
+        .attr("stroke-width",3)
+        .attr("r",d => d.type == "group" ? 15 : 0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,50)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,50)});
 
     d3.selectAll(".expand-group-ellipsis-0")
         .transition()
+        .attr("r",d => d.type == "group" ? 2 : 0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d, d.minimized ? 50 : 56)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d, d.minimized ? 56 : 50)});
 
     d3.selectAll(".expand-group-ellipsis-1")
         .transition()
+        .attr("r",d => d.type == "group" ? 2 : 0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,50)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,50)});
 
     d3.selectAll(".expand-group-ellipsis-2")
         .transition()
+        .attr("r",d => d.type == "group" ? 2 : 0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d, d.minimized ? 50 : 44)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d, d.minimized ? 44 : 50)});
 }
