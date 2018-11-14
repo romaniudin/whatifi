@@ -64,6 +64,8 @@
         <div id="whatifi-details-button" style="position:absolute;right:0px;bottom:0px;display:none;opacity:0.5;background:#f8b46a;text:black;width:10%" align="middle"></div>
         <!--<div id="scenario-bar" style="border:1px solid gainsboro"></div>-->
         <script>
+            render();
+            renderScenario();
             const me = addNode("Me","me");
             const job = addNode("Job","group");
             addChild(job,me,false,true);
@@ -72,7 +74,7 @@
             addChild(childcare,job,false,true);
 
             render();
-            renderScenario();
+
             addNewNodeTo(job,"Job1","income",{"finance":{"value":10000,"frequency":1,"start":"2018-11"}});
             addNewNodeTo(job,"Job2","income",{"finance":{"value":12000,"frequency":1,"start":"2019-05"}});
             addNewNodeTo(job,"Job3","income",{"finance":{"value":20000,"frequency":1,"start":"2020-05","end":"2022-01"}});

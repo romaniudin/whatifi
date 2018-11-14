@@ -164,6 +164,59 @@ const addNode = (nodeName,nodeType,nodeDetails) =>
     return nodeId;
 }
 
+const removeNode = (nodeId) =>
+{
+    const node = nodes[nodeId];
+
+    if (nodes[node.parentNodes[0]].childrenNodes.length == 1)
+    {
+        toast("Cannot remove - last node of the group");
+        flashNode(nodeId);
+        flashNode(node.parentNodes[0]);
+        return;
+    }
+
+    node.parentNodes.map
+    (
+        parentNodeId =>
+        {
+            const parentNode = nodes[parentNodeId];
+            const index = parentNode.childrenNodes.indexOf(nodeId);
+
+            if (index != -1) parentNode.childrenNodes.splice(index,1);
+
+            if (parentNode.childrenNodes.length == 0)
+            {
+                parentNode.childrenNodes.push(parentNode.toInherit);
+            }
+        }
+    );
+
+    node.childrenNodes.map
+    (
+        childNodeId =>
+        {
+            const childNode = nodes[childNodeId];
+            const index = childNode.parentNodes.indexOf(nodeId);
+
+            if (index != -1) childNode.parentNodes.splice(index,1);
+
+            if (childNode.parentNodes.length == 0)
+            {
+                childNode.parentNodes.push(node.parentNodes[0]);
+            }
+        }
+    );
+
+    delete(nodes[nodeId]);
+    const index = orderedNodes.indexOf(nodeId);
+    orderedNodes.splice(index,1);
+
+    d3.selectAll(`#${nodeId}-element`).remove();
+
+    render(false);
+}
+
 const updateNodeDetails = (nodeId,nodeDetails) =>
 {
     const node = nodes[nodeId];

@@ -143,6 +143,11 @@ const generateNodeMenu_compareChildren = (container,nodeId,offset=0) =>
     generateNodeMenuItem(container,"Compare Group",`compareChildNodes(\"${nodeId}\");nodeMenuCloseAll();`,offset);
 }
 
+const generateNodeMenu_removeNode = (container,nodeId,offset=0) =>
+{
+    generateNodeMenuItem(container,"Remove Node",`removeNode(\"${nodeId}\");nodeMenuCloseAll();`,offset);
+}
+
 const generateNodeMenu_editDetails = (container,nodeId,offset=0) =>
 {
     generateNodeMenuItem(container,"Edit Details",`onContextMenu(\"${nodeId}\");nodeMenuCloseAll();`,offset);
@@ -167,5 +172,5 @@ const nodeMenuGenerator =
 {
     "me":[generateNodeMenu_traverseAll,generateNodeMenu_editDetails],
     "group":[generateNodeMenu_compareChildren,generateNodeMenu_editDetails],
-    "default":[generateNodeMenu_toggle,generateNodeMenu_traverse,generateNodeMenu_editDetails],
+    "default":[generateNodeMenu_toggle,generateNodeMenu_traverse,generateNodeMenu_removeNode,generateNodeMenu_editDetails],
 }
