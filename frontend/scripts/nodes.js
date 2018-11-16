@@ -164,61 +164,147 @@ const addNode = (nodeName,nodeType,nodeDetails) =>
     return nodeId;
 }
 
-const shiftChildren = (node,shift) =>
+const addNewGroupTo = (nodeId,parentNodeId) =>
+{
+    const node = nodes[nodeId];
+    const parentNode = nodes[parentNodeId];
+
+    node.toInherit = parentNode.toInherit;
+    parentNode.toInherit = node.nodeId;
+    let nodeLevel = (parentNode.level+1);
+
+    if (parentNode.childrenNodes.length > 0)
+    {
+        nodeLevel += (parentNode.childrenNodes.length > 0);
+        parentNode.childrenNodes.map
+        (
+            childrenNodeId =>
+            {
+                const childNode = nodes[childrenNodeId];
+                childNode.childrenNodes.push(node.nodeId);
+
+                const index = childNode.childrenNodes.indexOf(node.toInherit);
+                if (node.toInherit && index != -1)
+                {
+                    childNode.childrenNodes.splice(index,1);
+                    node.parentNodes.push(childrenNodeId);
+                }
+            }
+        );
+    }
+    else
+    {
+        parentNode.childrenNodes.push(nodeId);
+    }
+
+    shiftNodes(nodeLevel-1,1);
+    node.level = nodeLevel;
+
+    if (node.toInherit)
+    {
+        node.childrenNodes = [node.toInherit];
+        const inheritedNode = nodes[node.toInherit];
+        inheritedNode.parentNodes = [nodeId];
+    }
+}
+
+const addNewNodeTo = (parentId,nodeName,type,nodeDetails) =>
+{
+    const node = addNode(nodeName,type,nodeDetails);
+    const isGroup = type == "group";
+    const parentNode = nodes[parentId];
+
+    if (isGroup && parentNode.type != "me")
+    {
+        addNewGroupTo(node,parentId);
+    }
+    else
+    {
+        addChild(node,parentId,!isGroup,isGroup);
+    }
+
+    render(false);
+    return node;
+}
+
+const shiftNodes = (level,shift) =>
 {
     orderedNodes.map
     (
         nodeId =>
         {
             const childNode = nodes[nodeId];
-            childNode.level += childNode.level > node.level ? shift : 0;
+            childNode.level += childNode.level > level ? shift : 0;
         }
     )
+}
+
+const removeChildren = (nodeId) =>
+{
+    const node = nodes[nodeId];
+    const toRemove = node.childrenNodes.concat([]);
+    toRemove.map
+    (
+        childNodeId =>
+        {
+            const childNode = nodes[childNodeId];
+            if (childNode.type != "group") removeNode(childNodeId);
+        }
+    );
 }
 
 const removeNode = (nodeId) =>
 {
     const node = nodes[nodeId];
-    const parentNode = nodes[node.parentNodes[0]];
 
     if (node.type == "group")
     {
+        removeChildren(nodeId);
+
         Object.keys(nodes).map
         (
             _nodeId =>
             {
                 const _node = nodes[_nodeId];
-                if (_node.toInherit == nodeId) _node.toInherit = node.toInherinode.toInherit;
+                if (_node.toInherit == nodeId)
+                {
+                    _node.toInherit = node.toInherit;
+                }
             }
         )
+    }
 
-        const toRemove = node.childrenNodes.concat([]);
-        toRemove.map
-        (
-            childNodeId =>
+    let onlyChild = true;
+    node.parentNodes.map
+    (
+        parentNodeId =>
+        {
+            const parentNode = nodes[parentNodeId];
+            const nodeIndex = parentNode.childrenNodes.indexOf(nodeId);
+            parentNode.childrenNodes.splice(nodeIndex,1);
+
+            if (parentNode.childrenNodes.length == 0)
             {
-                const childNode = nodes[childNodeId];
-                if (childNode.type != "group") removeNode(childNodeId);
+                if (node.childrenNodes.length > 0)
+                {
+                    parentNode.childrenNodes = node.childrenNodes.concat([]);
+                }
+                else if (parentNode.toInherit)
+                {
+                    parentNode.childrenNodes.push(parentNode.toInherit);
+                }
+                else
+                {
+                    parentNode.childrenNodes = [];
+                }
             }
-        );
-    }
-
-    const nodeIndex = parentNode.childrenNodes.indexOf(nodeId);
-    if (nodeIndex != -1) parentNode.childrenNodes.splice(nodeIndex,1);
-
-    if (parentNode.childrenNodes.length == 0)
-    {
-        if (parentNode.toInherit)
-        {
-            parentNode.childrenNodes.push(parentNode.toInherit);
+            else
+            {
+                onlyChild = false;
+            }
         }
-        else
-        {
-            parentNode.childrenNodes = [];
-        }
-
-        shiftChildren(parentNode,-1);
-    }
+    )
+    if (onlyChild) shiftNodes(node.level,-1);
 
     node.childrenNodes.map
     (
@@ -231,7 +317,7 @@ const removeNode = (nodeId) =>
 
             if (childNode.parentNodes.length == 0)
             {
-                childNode.parentNodes.push(node.parentNodes[0]);
+                childNode.parentNodes = node.parentNodes;
             }
         }
     );
@@ -254,13 +340,6 @@ const updateNodeDetails = (nodeId,nodeDetails) =>
     }
 
     d3.select(`#${nodeId}-element .node-name`).text(node.nodeName);
-}
-
-const addNewNodeTo = (parentId,nodeName,type,nodeDetails) =>
-{
-    const node = addNode(nodeName,type,nodeDetails);
-    addChild(node,parentId,true);
-    render(false);
 }
 
 const tree = (nodeId) =>

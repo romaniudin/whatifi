@@ -158,7 +158,7 @@ const nodeOverlayDetails = (nodeId) =>
         );
 }
 
-const nodeOverlayAdd = (nodeId) =>
+const nodeOverlayAdd = (nodeId,isGroup=false) =>
 {
     removeNodeOverlay();
 
@@ -174,8 +174,11 @@ const nodeOverlayAdd = (nodeId) =>
     div.append("h5").text(`Add to: ${node.nodeName}`);
 
     generateOverlayInput(div,"Node Name","add-node-name-input","text",null);
-    generateOverlayInput(div,"Value","add-node-value-input","number",null);
-    generateOverlayInput(div,"Frequency (Months)","add-node-frequency-input","number",null);
+    if (!isGroup)
+    {
+        generateOverlayInput(div,"Value","add-node-value-input","number",null);
+        generateOverlayInput(div,"Frequency (Months)","add-node-frequency-input","number",null);
+    }
     generateOverlayInput(div,"Start Date","add-node-start-input","month",null);
     generateOverlayInput(div,"End Date","add-node-end-input","month",null);
 
@@ -189,7 +192,7 @@ const nodeOverlayAdd = (nodeId) =>
             "click",
             () =>
             {
-                submitNewNode(nodeId);
+                submitNewNode(nodeId,isGroup);
             }
         );
 

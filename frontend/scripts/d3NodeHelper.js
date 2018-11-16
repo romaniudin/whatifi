@@ -637,7 +637,7 @@ const updateLinkElements = (newLinks,currentLinks,removedLinks) =>
     d3.selectAll("#link-container line").transition().attr("opacity",1);
 }
 
-const verifyNodeDetails = (nodeName,nodeValue,nodeFrequency,nodeStart,nodeEnd) =>
+const verifyNodeDetails = (nodeName,nodeValue,nodeFrequency,nodeStart,nodeEnd,isGroup) =>
 {
     let valid = true;
 
@@ -646,45 +646,51 @@ const verifyNodeDetails = (nodeName,nodeValue,nodeFrequency,nodeStart,nodeEnd) =
         valid &= false;
         toast("Please enter node name");
     }
-    if (!nodeValue || nodeValue == "")
+
+    if (!isGroup)
     {
-        valid &= false;
-        toast("Please enter value");
-    }
-    if (!nodeFrequency || nodeFrequency == "" || nodeFrequency <= 0)
-    {
-        valid &= false;
-        toast("Please enter a frequency (>=0)");
-    }
-    if (!nodeStart || nodeStart == "" || nodeStart < 0)
-    {
-        valid &= false;
-        toast("Please enter a start date");
-    }
-    if (nodeEnd && (nodeStart > nodeEnd))
-    {
-        valid &= false;
-        toast("Please enter a end date (>=start date)");
+        if (!nodeValue || nodeValue == "")
+        {
+            valid &= false;
+            toast("Please enter value");
+        }
+        if (!nodeFrequency || nodeFrequency == "" || nodeFrequency <= 0)
+        {
+            valid &= false;
+            toast("Please enter a frequency (>=0)");
+        }
+
+        if (!nodeStart || nodeStart == "" || nodeStart < 0)
+        {
+            valid &= false;
+            toast("Please enter a start date");
+        }
+        if (nodeEnd && (nodeStart > nodeEnd))
+        {
+            valid &= false;
+            toast("Please enter a end date (>=start date)");
+        }
     }
 
     return valid;
 }
 
-const submitNewNode = (parentNodeId) =>
+const submitNewNode = (parentNodeId,isGroup) =>
 {
     const nodeName = document.getElementById("add-node-name-input").value;
-    const nodeValue = document.getElementById("add-node-value-input").value;
-    const nodeFrequency = document.getElementById("add-node-frequency-input").value;
-    const nodeStart = document.getElementById("add-node-start-input").value;
-    const nodeEnd = document.getElementById("add-node-end-input").value;
+    const nodeValue = isGroup ? null : document.getElementById("add-node-value-input").value;
+    const nodeFrequency = isGroup ? null : document.getElementById("add-node-frequency-input").value;
+    const nodeStart = isGroup ? null : document.getElementById("add-node-start-input").value;
+    const nodeEnd = isGroup ? null : document.getElementById("add-node-end-input").value;
 
-    if (verifyNodeDetails(nodeName,nodeValue,nodeFrequency,nodeStart,nodeEnd))
+    if (verifyNodeDetails(nodeName,nodeValue,nodeFrequency,nodeStart,nodeEnd,isGroup))
     {
         addNewNodeTo
         (
             parentNodeId,
             nodeName,
-            "income",
+            isGroup ? "group" : "income",
+            isGroup ? {} :
             {
                 "finance":
                 {
