@@ -32,14 +32,23 @@ let previousLinks = {};
 const render = (newCanvas=true) =>
 {
     let allNodes = [];
-    for (const nodeId in nodes)
-    {
-        allNodes.push(nodes[nodeId]);
-    }
+    Object.keys(nodes).map
+    (
+        nodeId =>
+        {
+            allNodes.push(nodes[nodeId]);
+        }
+    );
 
     balancedNodes = [];
     allNodes = allNodes.sort(compareNodeLevels);
-    allNodes.map(node=>balanceNodes(balancedNodes,node));
+    allNodes.map
+    (
+        node =>
+        {
+            balanceNodes(balancedNodes,node)
+        }
+    );
 
     const range = d3.extent(allNodes,(node) => node.x);
     const shift = range[1] - range[0];

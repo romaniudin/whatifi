@@ -164,33 +164,61 @@ const addNode = (nodeName,nodeType,nodeDetails) =>
     return nodeId;
 }
 
+const shiftChildren = (node,shift) =>
+{
+    orderedNodes.map
+    (
+        nodeId =>
+        {
+            const childNode = nodes[nodeId];
+            childNode.level += childNode.level > node.level ? shift : 0;
+        }
+    )
+}
+
 const removeNode = (nodeId) =>
 {
     const node = nodes[nodeId];
+    const parentNode = nodes[node.parentNodes[0]];
 
-    if (nodes[node.parentNodes[0]].childrenNodes.length == 1)
+    if (node.type == "group")
     {
-        toast("Cannot remove - last node of the group");
-        flashNode(nodeId);
-        flashNode(node.parentNodes[0]);
-        return;
+        Object.keys(nodes).map
+        (
+            _nodeId =>
+            {
+                const _node = nodes[_nodeId];
+                if (_node.toInherit == nodeId) _node.toInherit = node.toInherinode.toInherit;
+            }
+        )
+
+        const toRemove = node.childrenNodes.concat([]);
+        toRemove.map
+        (
+            childNodeId =>
+            {
+                const childNode = nodes[childNodeId];
+                if (childNode.type != "group") removeNode(childNodeId);
+            }
+        );
     }
 
-    node.parentNodes.map
-    (
-        parentNodeId =>
+    const nodeIndex = parentNode.childrenNodes.indexOf(nodeId);
+    if (nodeIndex != -1) parentNode.childrenNodes.splice(nodeIndex,1);
+
+    if (parentNode.childrenNodes.length == 0)
+    {
+        if (parentNode.toInherit)
         {
-            const parentNode = nodes[parentNodeId];
-            const index = parentNode.childrenNodes.indexOf(nodeId);
-
-            if (index != -1) parentNode.childrenNodes.splice(index,1);
-
-            if (parentNode.childrenNodes.length == 0)
-            {
-                parentNode.childrenNodes.push(parentNode.toInherit);
-            }
+            parentNode.childrenNodes.push(parentNode.toInherit);
         }
-    );
+        else
+        {
+            parentNode.childrenNodes = [];
+        }
+
+        shiftChildren(parentNode,-1);
+    }
 
     node.childrenNodes.map
     (
