@@ -164,6 +164,46 @@ const addNode = (nodeName,nodeType,nodeDetails) =>
     return nodeId;
 }
 
+const addNewGroupTo = (nodeId,parentNodeId) =>
+{
+    const node = nodes[nodeId];
+    const parentNode = nodes[parentNodeId];
+
+    node.toInherit = parentNode.toInherit;
+    parentNode.toInherit = node.nodeId;
+
+    parentNode.childrenNodes.map
+    (
+        childrenNodeId =>
+        {
+            const childNode = nodes[childrenNodeId];
+            childNode.childrenNodes.push(node.nodeId);
+        }
+    );
+
+    node.level += (parentNode.level+1);
+    node.level += (parentNode.childrenNodes.length > 0);
+}
+
+const addNewNodeTo = (parentId,nodeName,type,nodeDetails) =>
+{
+    const node = addNode(nodeName,type,nodeDetails);
+    const isGroup = type == "group";
+    const parentNode = nodes[parentId];
+
+    if (isGroup && parentNode.type != "me")
+    {
+        addNewGroupTo(node,parentId);
+    }
+    else
+    {
+        addChild(node,parentId,!isGroup,isGroup);
+    }
+
+    render(false);
+    return node;
+}
+
 const shiftChildren = (node,shift) =>
 {
     orderedNodes.map
@@ -188,7 +228,10 @@ const removeNode = (nodeId) =>
             _nodeId =>
             {
                 const _node = nodes[_nodeId];
-                if (_node.toInherit == nodeId) _node.toInherit = node.toInherinode.toInherit;
+                if (_node.toInherit == nodeId)
+                {
+                    _node.toInherit = node.toInherit;
+                }
             }
         )
 
@@ -254,13 +297,6 @@ const updateNodeDetails = (nodeId,nodeDetails) =>
     }
 
     d3.select(`#${nodeId}-element .node-name`).text(node.nodeName);
-}
-
-const addNewNodeTo = (parentId,nodeName,type,nodeDetails) =>
-{
-    const node = addNode(nodeName,type,nodeDetails);
-    addChild(node,parentId,true);
-    render(false);
 }
 
 const tree = (nodeId) =>
