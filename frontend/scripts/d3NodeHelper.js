@@ -334,6 +334,7 @@ const createNodeMainElements = (node) =>
 {
     const mainNode = node.append("g")
         .attr("class","main-node-element")
+        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`})
         .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`});
 
     mainNode.append("circle")
@@ -357,7 +358,6 @@ const createNodeMainElements = (node) =>
         .attr("fill", d => d.highlighted ? nodeHighlightedColour : nodeBackgroundColour(d))
         .attr("opacity",0)
         .attr("stroke",d => nodeBorderColour(d))
-        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`})
         .attr("cx",d=>{return obtainNodeXCoordinate(d,0)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,0)});
 
@@ -366,8 +366,6 @@ const createNodeMainElements = (node) =>
         .attr("fill", "white")
         .attr("opacity",0)
         .attr("stroke",d => d.selected ? nodeSelectedBorderColour : nodeImageBorderColour(d))
-        .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`})
-        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`})
         .attr("cx",d=>{return obtainNodeXCoordinate(d,30)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,-30)});
 
@@ -375,8 +373,6 @@ const createNodeMainElements = (node) =>
         .attr("class","node-name")
         .attr("text-anchor","middle")
         .attr("opacity",0)
-        .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`})
-        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`})
         .attr("x",d=>{return obtainNodeXCoordinate(d,0)})
         .attr("y",d=>{return obtainNodeYCoordinate(d,5)});
 }
