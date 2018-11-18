@@ -30,7 +30,7 @@ const obtainNodeLayer = (node) =>
 }
 
 let previousLinks = {};
-const render = (newCanvas=true) =>
+const render = (newCanvas=true,delaySubnode=false) =>
 {
     let allNodes = [];
     Object.keys(nodes).map
@@ -109,6 +109,7 @@ const render = (newCanvas=true) =>
     createNodeOverlay("node-graph-viewbox");
 
     updateLinkElements(newLinks,existingLinks,removedLinks);
+    setTimeout(generateSubNodeDisplay,delaySubnode ? 150 : 0);
 }
 
 let lastValidZoom = 1;
@@ -230,8 +231,6 @@ const renderNodeSelection = (nodeId) =>
     const node = nodes[nodeId];
     d3.select(`#node-graph svg #node-graph-viewbox #${nodeId}-element .main-node`)
         .attr("stroke", nodeBorderColour(node));
-//    d3.select(`#node-graph svg #node-graph-viewbox #${nodeId}-element .img-node`)
-//        .attr("stroke", nodeImageBorderColour(node));
 }
 
 const renderNodeHighlight = (nodeId) =>
@@ -350,7 +349,7 @@ const createNodeSubElements = (node) =>
 {
     const subElements = node.append("g")
         .attr("class","sub-node-element")
-        .attr("oncontextmenu",(d) => {return `showSubElements("${d.nodeId}")`})
+        .attr("oncontextmenu",(d) => {return `toggleSubElementsDisplay("${d.nodeId}")`})
         .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`});
 
     subElements.append("circle")
@@ -374,22 +373,26 @@ const createNodeSubElements = (node) =>
         .attr("cy",d=>{return obtainNodeYCoordinate(d,-30)});
 }
 
+const shouldDisplaySubElement = (nodeId) =>
+{
+    const node = nodes[nodeId];
+    return Object.keys(node.subNodes).length > 0 && ((node.type != "group" && !node.expanded && (node.selected || !node.minimized)) || (node.type == "group" && !node.expanded && !node.minimized));
+}
 const positionNodeSubElements = () =>
 {
     d3.selectAll(".sub-node-shadow")
         .transition()
         .attr("stroke-width",5)
-        .attr("opacity",d => {return Object.keys(d.subNodes).length > 0 ? 0.25 : 0})
-        .attr("r",d => Object.keys(d.subNodes).length > 0 ? subNodeRadius : 0)
+        .attr("opacity",d => shouldDisplaySubElement(d.nodeId) ? 0.25 : 0)
+        .attr("r",d => {console.log(shouldDisplaySubElement(d.nodeId),d.nodeId); return shouldDisplaySubElement(d.nodeId) ? subNodeRadius : 0})
         .attr("cx",d=>{return obtainNodeXCoordinate(d,32)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,-28)});
 
-
     d3.selectAll(".sub-node")
         .transition()
-        .attr("opacity",d => {return Object.keys(d.subNodes).length > 0 ? 1 : 0})
         .attr("stroke-width",4)
-        .attr("r",d => Object.keys(d.subNodes).length > 0 ? subNodeRadius : 0)
+        .attr("opacity",d => shouldDisplaySubElement(d.nodeId) ? 1 : 0)
+        .attr("r",d => shouldDisplaySubElement(d.nodeId) ? subNodeRadius : 0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,30)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,-30)});
 }
@@ -398,7 +401,7 @@ const createNodeMainElements = (node) =>
 {
     const mainNode = node.append("g")
         .attr("class","main-node-element")
-        .attr("oncontextmenu",(d) => {return `showSubElements("${d.nodeId}")`})
+        .attr("oncontextmenu",(d) => {return `toggleSubElementsDisplay("${d.nodeId}")`})
         .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`});
 
     mainNode.append("circle")
@@ -671,9 +674,6 @@ const updateLinkElements = (newLinks,currentLinks,removedLinks) =>
             {
                 current.attr("opacity",0);
             }
-
-
-
         }
     )
 
@@ -768,12 +768,122 @@ const submitNewNode = (parentNodeId,type) =>
     }
 }
 
-const showSubElements = (nodeId) =>
+let currentNodeExpanded;
+let currentSubNodesExpanded;
+const toggleSubElementsDisplay = (nodeId) =>
 {
     const node = nodes[nodeId];
+    node.expanded = Object.keys(node.subNodes).length == 0 ? false : !node.expanded;
     if (Object.keys(node.subNodes).length == 0) return;
 
-    node.expanded = !node.expanded;
+    subElementAction(nodeId);
+
+    Object.keys(nodes).map
+    (
+        _nodeId =>
+        {
+            const _node = nodes[_nodeId];
+            if (_nodeId != nodeId) _node.expanded = false;
+        }
+    );
+
+    generateSubNodeDisplay(true);
+}
+
+const generateSubNodeDisplay = (expanded=false) =>
+{
+    const expected = {};
+    currentNodeExpanded = null;
+    Object.keys(nodes).map
+    (
+        _nodeId =>
+        {
+            const _node = nodes[_nodeId];
+            if (_node.expanded)
+            {
+                currentNodeExpanded = _nodeId;
+                Object.keys(_node.subNodes).map
+                (
+                    subNode =>
+                    {
+                        expected[`parent_${_nodeId}_sub_${subNode}`] =
+                        {
+                            "nodeId":_nodeId,
+                            "subNodeId":subNode,
+                            "elementId":`parent_${_nodeId}_sub_${subNode}`,
+                        };
+                    }
+                );
+            }
+        }
+    )
+
+    const create = [], update = [], remove = [];
+    Object.keys(expected).map
+    (
+        subNode =>
+        {
+            if (!currentSubNodesExpanded || currentSubNodesExpanded[subNode] == null)
+            {
+                create[subNode] = expected[subNode];
+            }
+            else
+            {
+                update[subNode] = expected[subNode];
+            }
+        }
+    )
+    if (currentSubNodesExpanded)
+    {
+        Object.keys(currentSubNodesExpanded).map
+        (
+            subNode =>
+            {
+                if (expected[subNode] == null)
+                {
+                    remove[subNode] = currentSubNodesExpanded[subNode];
+                }
+            }
+        )
+    }
+    updateSubElementDisplay(create,update,remove,expanded);
+}
+
+const updateSubElementDisplay = (create,update,remove,expanded=false) =>
+{
+    currentSubNodesExpanded = Object.assign({},create,update);
+    Object.keys(remove).map
+    (
+        subNode =>
+        {
+            d3.selectAll(`#${subNode}`).remove();
+        }
+    );
+
+    d3.select("#sub-node-container").selectAll("circle")
+        .data(Object.keys(currentSubNodesExpanded).map(id=>currentSubNodesExpanded[id])).enter()
+        .append("circle")
+        .attr("id",d=>d.elementId)
+        .attr("r",30)
+        .attr("opacity",0)
+        .attr("stroke","slategrey")
+        .attr("stroke-width",2)
+        .attr("onclick",(d) => {return `removeSubNodeRemove("${d.nodeId}","${d.subNodeId}")`});
+
+    d3.selectAll("#sub-node-container circle")
+        .attr("cx",(d,i)=>obtainNodeXCoordinate(nodes[d.nodeId],60+(expanded ? 0 : i*80)))
+        .attr("cy",(d,i)=>obtainNodeYCoordinate(nodes[d.nodeId],-60))
+
+    d3.selectAll("#sub-node-container circle")
+        .transition()
+        .attr("opacity",1)
+        .attr("cx",(d,i)=>obtainNodeXCoordinate(nodes[d.nodeId],60+i*80))
+        .attr("cy",(d,i)=>obtainNodeYCoordinate(nodes[d.nodeId],-60))
+}
+
+const subElementAction = (nodeId) =>
+{
+    const node = nodes[nodeId];
     const expanded = node.expanded;
     const offset = expanded ? 2 : 1;
 
@@ -789,66 +899,9 @@ const showSubElements = (nodeId) =>
         .transition()
         .attr("opacity",expanded ? 0 : 1)
         .attr("r",expanded == 2 ? mainNodeRadius : subNodeRadius)
-        .attr("cx",d=>{console.log(d);return obtainNodeXCoordinate(d,30*offset)})
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,30*offset)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,-30*offset)});
 
-    if (expanded)
-    {
-        displaySubElements(nodeId);
-    }
-    else
-    {
-        hideSubElements(nodeId);
-    }
-}
-
-const displaySubElements = (nodeId) =>
-{
-    const node = nodes[nodeId];
-    const subElementsContainer = nodeCanvas.select("#sub-node-container");
-    console.log(subElementsContainer);
-
-    const startingX = obtainNodeXCoordinate(node,60);
-    const startingY = obtainNodeYCoordinate(node,-60);
-    const startingXShadow = obtainNodeXCoordinate(node,64);
-    const startingYShadow = obtainNodeYCoordinate(node,-56);
-
-    const subNode = subElementsContainer.selectAll("circle")
-        .data(Object.keys(node.subNodes));
-
-    console.log(subNode.exit());
-    console.log(subNode.enter());
-    subNode.exit().remove();    
-
-    const newNodes = subNode.enter()
-        .append("circle")
-        .attr("r",30)
-        .attr("opacity",0)
-        .attr("stroke","black")
-        .attr("stroke-width",2)
-        .attr("cx",startingX)
-        .attr("cy",startingY);
-
-    newNodes.transition()
-        .attr("opacity",1)
-        .attr("cx",(d,i) => {return startingX+i*80})
-        .attr("cy",startingY);
-}
-
-const hideSubElements = (nodeId) =>
-{
-    const node = nodes[nodeId];
-    const subElementsContainer = nodeCanvas.select("#sub-node-container");
-
-    const startingX = obtainNodeXCoordinate(node,60);
-    const startingY = obtainNodeYCoordinate(node,-60);
-    const startingXShadow = obtainNodeXCoordinate(node,64);
-    const startingYShadow = obtainNodeYCoordinate(node,-56);
-
-    const subNode = subElementsContainer.selectAll("circle")
-        .transition()
-        .attr("opacity",0)
-        .attr("cx",startingX)
-        .attr("cy",startingY).remove();
+    return expanded;
 }
 

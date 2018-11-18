@@ -217,6 +217,12 @@ const addNewSubNodeTo = (nodeId,nodeName,nodeDetails) =>
     render(false);
 }
 
+const removeSubNodeRemove = (nodeId,nodeName) =>
+{
+    const node = nodes[nodeId];
+    delete(node["subNodes"][nodeName]);
+    generateSubNodeDisplay();
+}
 const addNewNodeTo = (parentId,nodeName,type,nodeDetails) =>
 {
     const node = addNode(nodeName,type,nodeDetails);
@@ -576,12 +582,14 @@ const collapseChildNodes = (nodeId) =>
 
     let childSelected = false;
     let isOnlyChildAGroup = true;
+    let childIdSelected;
     node.childrenNodes.map
     (
         (childNodeId) =>
         {
             childSelected |= nodes[childNodeId].selected;
             isOnlyChildAGroup &= nodes[childNodeId].type == "group";
+            if (nodes[childNodeId].selected) childIdSelected = childNodeId;
         }
     );
 
@@ -604,6 +612,13 @@ const collapseChildNodes = (nodeId) =>
             node["childrenNodes"].map( (nodeId) => {flashNode(nodeId)} );
             return;
         }
+    }
+
+    const temp = currentNodeExpanded;
+    if (temp)
+    {
+        nodes[temp].expanded = false;
+        generateSubNodeDisplay();
     }
 
     node["minimized"] = !node["minimized"];
@@ -630,7 +645,11 @@ const collapseChildNodes = (nodeId) =>
         }
     );
 
-    render(false);
+    if (temp == childIdSelected)
+    {
+        nodes[temp].expanded = true;
+    }
+    render(false,true);
 }
 
 const reverseTraverse = (nodeId,traversedNodes,showGraph=true,fastTraverse=false) =>
