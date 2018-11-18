@@ -146,8 +146,10 @@ const addNode = (nodeName,nodeType,nodeDetails) =>
         "level":0,
         "parentNodes":[],
         "childrenNodes":[],
+        "subNodes":{},
         "selected":false,
         "highlighted":false,
+        "expanded":false,
         "toInherit":null,
         "type":nodeType,
     };
@@ -206,6 +208,13 @@ const addNewGroupTo = (nodeId,parentNodeId) =>
         const inheritedNode = nodes[node.toInherit];
         inheritedNode.parentNodes = [nodeId];
     }
+}
+
+const addNewSubNodeTo = (nodeId,nodeName,nodeDetails) =>
+{
+    const node = nodes[nodeId];
+    node["subNodes"][nodeName] = nodeDetails;
+    render(false);
 }
 
 const addNewNodeTo = (parentId,nodeName,type,nodeDetails) =>

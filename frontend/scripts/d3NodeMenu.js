@@ -145,7 +145,12 @@ const generateNodeMenu_compareChildren = (container,nodeId,offset=0) =>
 
 const generateNodeMenu_addGroupNode = (container,nodeId,offset=0) =>
 {
-    generateNodeMenuItem(container,"Add Group",`nodeOverlayAdd(\"${nodeId}\",1);nodeMenuCloseAll();`,offset);
+    generateNodeMenuItem(container,"Add Group",`nodeOverlayAdd(\"${nodeId}\","group");nodeMenuCloseAll();`,offset);
+}
+
+const generateNodeMenu_addSubNode = (container,nodeId,offset=0) =>
+{
+    generateNodeMenuItem(container,"Add Node",`nodeOverlayAdd(\"${nodeId}\","sub");nodeMenuCloseAll();`,offset);
 }
 
 const generateNodeMenu_removeNode = (container,nodeId,offset=0) =>
@@ -176,6 +181,6 @@ const nodeMenuCloseAll = () =>
 const nodeMenuGenerator =
 {
     "me":[generateNodeMenu_traverseAll,generateNodeMenu_editDetails],
-    "group":[generateNodeMenu_compareChildren,generateNodeMenu_addGroupNode,generateNodeMenu_editDetails,generateNodeMenu_removeNode],
-    "default":[generateNodeMenu_toggle,generateNodeMenu_traverse,generateNodeMenu_editDetails,generateNodeMenu_removeNode],
+    "group":[generateNodeMenu_compareChildren,generateNodeMenu_addGroupNode,generateNodeMenu_addSubNode,generateNodeMenu_editDetails,generateNodeMenu_removeNode],
+    "default":[generateNodeMenu_toggle,generateNodeMenu_traverse,generateNodeMenu_addSubNode,generateNodeMenu_editDetails,generateNodeMenu_removeNode],
 }

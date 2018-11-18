@@ -6,7 +6,8 @@ let svg,nodeCanvas;
 const nodeShadowColour = "black";
 const nodeHighlightedColour = "gainsboro";
 const nodeTraversedBorderColour = "gainsboro";
-const nodeSelectedBorderColour = "black";
+const mainNodeRadius = 40;
+const subNodeRadius = 15;
 
 const linkUnhighlightedColour = "none";
 const linkHighlightedColour = "gainsboro";
@@ -95,7 +96,7 @@ const render = (newCanvas=true) =>
     previousLinks = {};
     existingLinks.concat(newLinks).map(link=>{previousLinks[link] = allLinks[link]});
 
-    const newNodes = nodeCanvas.selectAll(".node")
+    const newNodes = nodeCanvas.select("#node-container").selectAll(".node")
         .data(layeredNodes)
         .enter()
         .append("g")
@@ -151,6 +152,8 @@ const createCanvas = (xRange,yRange) =>
     );
 
     nodeCanvas.append("g").attr("id","link-container");
+    nodeCanvas.append("g").attr("id","node-container");
+    nodeCanvas.append("g").attr("id","sub-node-container");
 }
 
 const clearCanvas = (canvas) =>
@@ -225,8 +228,10 @@ const generateLinks = (balancedNodes) =>
 const renderNodeSelection = (nodeId) =>
 {
     const node = nodes[nodeId];
-    d3.select(`#node-graph svg #node-graph-viewbox #${nodeId}-element .img-node`)
-        .attr("stroke", node.selected ? nodeSelectedBorderColour : nodeImageBorderColour(node));
+    d3.select(`#node-graph svg #node-graph-viewbox #${nodeId}-element .main-node`)
+        .attr("stroke", nodeBorderColour(node));
+//    d3.select(`#node-graph svg #node-graph-viewbox #${nodeId}-element .img-node`)
+//        .attr("stroke", nodeImageBorderColour(node));
 }
 
 const renderNodeHighlight = (nodeId) =>
@@ -327,6 +332,7 @@ const obtainNodeYCoordinate = (node,offset=0) =>
 
 const createNodeElements = (node) =>
 {
+    createNodeSubElements(node);
     createNodeMainElements(node);
     createNodeAddElements(node);
     createNodeExpandElements(node);
@@ -334,49 +340,86 @@ const createNodeElements = (node) =>
 
 const positionNodeElements = () =>
 {
+    positionNodeSubElements();
     positionNodeMainElements();
     positionNodeAddElements();
     positionNodeExpandElements();
+}
+
+const createNodeSubElements = (node) =>
+{
+    const subElements = node.append("g")
+        .attr("class","sub-node-element")
+        .attr("oncontextmenu",(d) => {return `showSubElements("${d.nodeId}")`})
+        .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`});
+
+    subElements.append("circle")
+        .attr("class","sub-node-shadow")
+        .attr("fill","black")
+        .attr("opacity",0)
+        .attr("r",0)
+        .attr("stroke-width",0)
+        .attr("stroke","black")
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,32)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,-28)});
+
+    subElements.append("circle")
+        .attr("class","sub-node")
+        .attr("fill", "white")
+        .attr("opacity",0)
+        .attr("r",0)
+        .attr("stroke-width",0)
+        .attr("stroke",d => nodeImageBorderColour(d))
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,30)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,-30)});
+}
+
+const positionNodeSubElements = () =>
+{
+    d3.selectAll(".sub-node-shadow")
+        .transition()
+        .attr("stroke-width",5)
+        .attr("opacity",d => {return Object.keys(d.subNodes).length > 0 ? 0.25 : 0})
+        .attr("r",d => Object.keys(d.subNodes).length > 0 ? subNodeRadius : 0)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,32)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,-28)});
+
+
+    d3.selectAll(".sub-node")
+        .transition()
+        .attr("opacity",d => {return Object.keys(d.subNodes).length > 0 ? 1 : 0})
+        .attr("stroke-width",4)
+        .attr("r",d => Object.keys(d.subNodes).length > 0 ? subNodeRadius : 0)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,30)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,-30)});
 }
 
 const createNodeMainElements = (node) =>
 {
     const mainNode = node.append("g")
         .attr("class","main-node-element")
-        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`})
+        .attr("oncontextmenu",(d) => {return `showSubElements("${d.nodeId}")`})
         .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`});
 
     mainNode.append("circle")
         .attr("class","main-node-shadow")
         .attr("fill","black")
         .attr("opacity",0)
+        .attr("r",0)
+        .attr("stroke-width",0)
         .attr("stroke","black")
         .attr("cx",d=>{return obtainNodeXCoordinate(d,2)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,2)});
 
     mainNode.append("circle")
-        .attr("class","img-node-shadow")
-        .attr("fill","black")
-        .attr("opacity",0)
-        .attr("stroke","black")
-        .attr("cx",d=>{return obtainNodeXCoordinate(d,32)})
-        .attr("cy",d=>{return obtainNodeYCoordinate(d,-28)});
-
-    mainNode.append("circle")
         .attr("class","main-node")
         .attr("fill", d => d.highlighted ? nodeHighlightedColour : nodeBackgroundColour(d))
         .attr("opacity",0)
+        .attr("r",0)
+        .attr("stroke-width",0)
         .attr("stroke",d => nodeBorderColour(d))
         .attr("cx",d=>{return obtainNodeXCoordinate(d,0)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,0)});
-
-    mainNode.append("circle")
-        .attr("class","img-node")
-        .attr("fill", "white")
-        .attr("opacity",0)
-        .attr("stroke",d => d.selected ? nodeSelectedBorderColour : nodeImageBorderColour(d))
-        .attr("cx",d=>{return obtainNodeXCoordinate(d,30)})
-        .attr("cy",d=>{return obtainNodeYCoordinate(d,-30)});
 
     mainNode.append("text")
         .attr("class","node-name")
@@ -392,33 +435,17 @@ const positionNodeMainElements = () =>
         .transition()
         .attr("stroke-width",5)
         .attr("opacity",0.25)
-        .attr("r",d => d.minimized && !d.selected ? 0 : 40)
+        .attr("r",d => d.minimized && !d.selected ? 0 : mainNodeRadius)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,2)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,2)});
-
-    d3.selectAll(".img-node-shadow")
-        .transition()
-        .attr("stroke-width",5)
-        .attr("opacity",0.25)
-        .attr("r",d => d.minimized && !d.selected ? 0 :15)
-        .attr("cx",d=>{return obtainNodeXCoordinate(d,32)})
-        .attr("cy",d=>{return obtainNodeYCoordinate(d,-28)});
 
     d3.selectAll(".main-node")
         .transition()
         .attr("opacity",1)
         .attr("stroke-width",4)
-        .attr("r",d => d.minimized && !d.selected ? 0 :40)
+        .attr("r",d => d.minimized && !d.selected ? 0 :mainNodeRadius)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,0)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,0)});
-
-    d3.selectAll(".img-node")
-        .transition()
-        .attr("opacity",1)
-        .attr("stroke-width",4)
-        .attr("r",d => d.minimized && !d.selected ? 0 :15)
-        .attr("cx",d=>{return obtainNodeXCoordinate(d,30)})
-        .attr("cy",d=>{return obtainNodeYCoordinate(d,-30)});
 
     d3.selectAll(".node-name")
         .transition()
@@ -434,11 +461,13 @@ const createNodeAddElements = (node) =>
 {
     const addNode = node.append("g")
         .attr("class","add-child-element")
-        .attr("onclick",(d) => {if (d.type=="group") return `nodeOverlayAdd("${d.nodeId}")`;else return ""})
+        .attr("onclick",(d) => {if (d.type=="group") return `nodeOverlayAdd("${d.nodeId}","default")`;else return ""})
 
     addNode.append("circle")
         .attr("class","add-node-shadow")
         .attr("fill","black")
+        .attr("r",0)
+        .attr("stroke-width",0)
         .attr("opacity",(d)=>{if (d.type=="group") return 0.25;else return 0;})
         .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeDistance/2+1)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,1)});
@@ -446,6 +475,8 @@ const createNodeAddElements = (node) =>
     addNode.append("circle")
         .attr("class","add-child-plus-circle")
         .attr("fill","steelblue")
+        .attr("r",0)
+        .attr("stroke-width",0)
         .attr("opacity",1)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeDistance/2)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,0)});
@@ -471,6 +502,8 @@ const createNodeAddElements = (node) =>
     addNode.append("circle")
         .attr("class","add-node")
         .attr("opacity",0)
+        .attr("r",0)
+        .attr("stroke-width",0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeDistance/2)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,0)});
 }
@@ -521,12 +554,16 @@ const createNodeExpandElements = (node) =>
         .attr("class","expand-group-element-shadow")
         .attr("fill","black")
         .attr("opacity",0.25)
+        .attr("r",0)
+        .attr("stroke-width",0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,52)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,52)});
 
     expandGroup.append("circle")
         .attr("class","expand-group-ellipsis")
         .attr("fill",d => nodeImageBackgroundColour(d))
+        .attr("r",0)
+        .attr("stroke-width",0)
         .attr("stroke",d => nodeImageBorderColour(d))
         .attr("cx",d=>{return obtainNodeXCoordinate(d,50)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,50)});
@@ -534,18 +571,24 @@ const createNodeExpandElements = (node) =>
     expandGroup.append("circle")
         .attr("class","expand-group-ellipsis-0")
         .attr("fill",d => nodeImageBorderColour(d))
+        .attr("r",0)
+        .attr("stroke-width",0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d, d.minimized ? 50 : 56)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d, d.minimized ? 56 : 50)});
 
     expandGroup.append("circle")
         .attr("class","expand-group-ellipsis-1")
         .attr("fill",d => nodeImageBorderColour(d))
+        .attr("r",0)
+        .attr("stroke-width",0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,50)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,50)});
 
     expandGroup.append("circle")
         .attr("class","expand-group-ellipsis-2")
         .attr("fill",d => nodeImageBorderColour(d))
+        .attr("r",0)
+        .attr("stroke-width",0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d, d.minimized ? 50 : 44)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d, d.minimized ? 44 : 50)});
 }
@@ -561,7 +604,7 @@ const positionNodeExpandElements = (node) =>
     d3.selectAll(".expand-group-ellipsis")
         .transition()
         .attr("stroke-width",3)
-        .attr("r",d => d.type == "group" ? 15 : 0)
+        .attr("r",d => d.type == "group" ? subNodeRadius : 0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,50)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,50)});
 
@@ -675,8 +718,9 @@ const verifyNodeDetails = (nodeName,nodeValue,nodeFrequency,nodeStart,nodeEnd,is
     return valid;
 }
 
-const submitNewNode = (parentNodeId,isGroup) =>
+const submitNewNode = (parentNodeId,type) =>
 {
+    const isGroup = type == "group";
     const nodeName = document.getElementById("add-node-name-input").value;
     const nodeValue = isGroup ? null : document.getElementById("add-node-value-input").value;
     const nodeFrequency = isGroup ? null : document.getElementById("add-node-frequency-input").value;
@@ -685,23 +729,126 @@ const submitNewNode = (parentNodeId,isGroup) =>
 
     if (verifyNodeDetails(nodeName,nodeValue,nodeFrequency,nodeStart,nodeEnd,isGroup))
     {
-        addNewNodeTo
-        (
-            parentNodeId,
-            nodeName,
-            isGroup ? "group" : "income",
-            isGroup ? {} :
+        const nodeDetails =
+        {
+            "finance":
             {
-                "finance":
-                {
-                    "value":nodeValue,
-                    "start":nodeStart,
-                    "end":nodeEnd,
-                    "frequency":nodeFrequency,
-                }
+                "value":nodeValue,
+                "start":nodeStart,
+                "end":nodeEnd,
+                "frequency":nodeFrequency,
             }
-        );
+        };
+
+        if (type == "sub")
+        {
+            if (nodes[parentNodeId].subNodes[nodeName])
+            {
+                return toast("Node name already exists");
+            }
+
+            addNewSubNodeTo
+            (
+                parentNodeId,
+                nodeName,
+                nodeDetails
+            );
+        }
+        else
+        {
+            addNewNodeTo
+            (
+                parentNodeId,
+                nodeName,
+                isGroup ? "group" : "income",
+                isGroup ? {} : nodeDetails
+            );
+        }
         removeNodeOverlay();
     }
+}
+
+const showSubElements = (nodeId) =>
+{
+    const node = nodes[nodeId];
+    if (Object.keys(node.subNodes).length == 0) return;
+
+    node.expanded = !node.expanded;
+    const expanded = node.expanded;
+    const offset = expanded ? 2 : 1;
+
+    const subElements = d3.selectAll(`#${nodeId}-element`);
+    subElements.selectAll(".sub-node-shadow")
+        .transition()
+        .attr("opacity",expanded ? 0 : 0.25)
+        .attr("r",expanded ? mainNodeRadius : subNodeRadius)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,32*offset)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,-28*offset)});
+
+    subElements.selectAll(".sub-node")
+        .transition()
+        .attr("opacity",expanded ? 0 : 1)
+        .attr("r",expanded == 2 ? mainNodeRadius : subNodeRadius)
+        .attr("cx",d=>{console.log(d);return obtainNodeXCoordinate(d,30*offset)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,-30*offset)});
+
+    if (expanded)
+    {
+        displaySubElements(nodeId);
+    }
+    else
+    {
+        hideSubElements(nodeId);
+    }
+}
+
+const displaySubElements = (nodeId) =>
+{
+    const node = nodes[nodeId];
+    const subElementsContainer = nodeCanvas.select("#sub-node-container");
+    console.log(subElementsContainer);
+
+    const startingX = obtainNodeXCoordinate(node,60);
+    const startingY = obtainNodeYCoordinate(node,-60);
+    const startingXShadow = obtainNodeXCoordinate(node,64);
+    const startingYShadow = obtainNodeYCoordinate(node,-56);
+
+    const subNode = subElementsContainer.selectAll("circle")
+        .data(Object.keys(node.subNodes));
+
+    console.log(subNode.exit());
+    console.log(subNode.enter());
+    subNode.exit().remove();    
+
+    const newNodes = subNode.enter()
+        .append("circle")
+        .attr("r",30)
+        .attr("opacity",0)
+        .attr("stroke","black")
+        .attr("stroke-width",2)
+        .attr("cx",startingX)
+        .attr("cy",startingY);
+
+    newNodes.transition()
+        .attr("opacity",1)
+        .attr("cx",(d,i) => {return startingX+i*80})
+        .attr("cy",startingY);
+}
+
+const hideSubElements = (nodeId) =>
+{
+    const node = nodes[nodeId];
+    const subElementsContainer = nodeCanvas.select("#sub-node-container");
+
+    const startingX = obtainNodeXCoordinate(node,60);
+    const startingY = obtainNodeYCoordinate(node,-60);
+    const startingXShadow = obtainNodeXCoordinate(node,64);
+    const startingYShadow = obtainNodeYCoordinate(node,-56);
+
+    const subNode = subElementsContainer.selectAll("circle")
+        .transition()
+        .attr("opacity",0)
+        .attr("cx",startingX)
+        .attr("cy",startingY).remove();
 }
 

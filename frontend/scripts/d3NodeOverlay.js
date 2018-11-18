@@ -158,10 +158,11 @@ const nodeOverlayDetails = (nodeId) =>
         );
 }
 
-const nodeOverlayAdd = (nodeId,isGroup=false) =>
+const nodeOverlayAdd = (nodeId,type) =>
 {
     removeNodeOverlay();
 
+    const isGroup = type == "group";
     const node = nodes[nodeId];
     d3.select("#node-overlay")
         .transition().duration(tooltipTransitionDelay)
@@ -192,7 +193,7 @@ const nodeOverlayAdd = (nodeId,isGroup=false) =>
             "click",
             () =>
             {
-                submitNewNode(nodeId,isGroup);
+                submitNewNode(nodeId,type);
             }
         );
 
