@@ -214,10 +214,20 @@ const addNewSubNodeTo = (nodeId,nodeName,nodeDetails) =>
 {
     const node = nodes[nodeId];
     node["subNodes"][nodeName] = nodeDetails;
-    render(false);
+    if (node.expanded)
+    {
+        node.expanded = false;
+        generateSubNodeDisplay();
+        node.expanded = true;
+        generateSubNodeDisplay();
+    }
+    else
+    {
+        render(false);
+    }
 }
 
-const removeSubNodeRemove = (nodeId,nodeName) =>
+const removeSubNodeFrom = (nodeId,nodeName) =>
 {
     const node = nodes[nodeId];
     delete(node["subNodes"][nodeName]);
