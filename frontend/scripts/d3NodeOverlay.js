@@ -72,8 +72,21 @@ const generateOverlayButton = (overlay,label,id,background="white",border="2px d
 const nodeOverlayDetails = (nodeId) =>
 {
     removeNodeOverlay();
-
     const node = nodes[nodeId];
+    _nodeOverlayDetails(node);
+}
+
+const subNodeOverlayDetails = (nodeId,subNodeId) =>
+{
+    const node = nodes[nodeId];
+    const subNode = Object.assign({},node.subNodes[subNodeId]);
+    subNode["type"] = "subnode";
+    subNode["nodeName"] = subNodeId;
+    _nodeOverlayDetails(subNode);
+}
+
+const _nodeOverlayDetails = (node) =>
+{
     d3.select("#node-overlay")
         .transition().duration(tooltipTransitionDelay)
         .style("padding", "0 10px 0 10px")

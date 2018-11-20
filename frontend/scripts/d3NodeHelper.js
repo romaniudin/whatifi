@@ -884,7 +884,8 @@ const generateSubNodes = (subNodes,expanded) =>
         .attr("fill","black")
         .attr("stroke","black")
         .attr("stroke-width",5)
-        .attr("onclick",(d) => {return `removeSubNodeFrom("${d.nodeId}","${d.subNodeId}")`});
+        .attr("onclick",(d) => {return `removeSubNodeFrom("${d.nodeId}","${d.subNodeId}")`})
+        .attr("oncontextmenu",(d) => {return `subNodeOverlayDetails("${d.nodeId}","${d.subNodeId}")`});
 
     d3.select("#sub-node-container").selectAll(".sub-node-element")
         .data(Object.keys(subNodes).map(id => data = Object.assign({},subNodes[id])))
@@ -897,7 +898,8 @@ const generateSubNodes = (subNodes,expanded) =>
         .attr("fill","white")
         .attr("stroke",d=>nodeImageBorderColour(nodes[d.nodeId]))
         .attr("stroke-width",4)
-        .attr("onclick",(d) => {return `removeSubNodeFrom("${d.nodeId}","${d.subNodeId}")`});
+        .attr("onclick",(d) => {return `removeSubNodeFrom("${d.nodeId}","${d.subNodeId}")`})
+        .attr("oncontextmenu",(d) => {return `subNodeOverlayDetails("${d.nodeId}","${d.subNodeId}")`});
 
     d3.select("#sub-node-container").selectAll(".sub-node-text")
         .data(Object.keys(subNodes).map(id => data = Object.assign({},subNodes[id])))
@@ -907,7 +909,9 @@ const generateSubNodes = (subNodes,expanded) =>
         .attr("class","sub-node-text")
         .attr("text-anchor","middle")
         .text(d=>d.subNodeId)
-        .attr("opacity",0);
+        .attr("opacity",0)
+        .attr("onclick",(d) => {return `removeSubNodeFrom("${d.nodeId}","${d.subNodeId}")`})
+        .attr("oncontextmenu",(d) => {return `subNodeOverlayDetails("${d.nodeId}","${d.subNodeId}")`});
 
     // Initialize location
     d3.selectAll("#sub-node-container .sub-node-element")
