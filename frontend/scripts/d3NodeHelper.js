@@ -376,7 +376,11 @@ const createNodeSubElements = (node) =>
 const shouldDisplaySubElement = (nodeId) =>
 {
     const node = nodes[nodeId];
-    return Object.keys(node.subNodes).length > 0 && ((node.type != "group" && !node.expanded && (node.selected || !node.minimized)) || (node.type == "group" && !node.expanded && !node.minimized));
+    return  Object.keys(node.subNodes).length > 0 &&
+            (
+                (node.type != "group" && !node.expanded && (node.selected || !node.minimized)) || 
+                (node.type == "group" && !node.expanded && !node.minimized)
+            );
 }
 const positionNodeSubElements = () =>
 {
@@ -891,7 +895,7 @@ const generateSubNodes = (subNodes,expanded) =>
         .attr("r",mainNodeRadius)
         .attr("opacity",0)
         .attr("fill","white")
-        .attr("stroke","slategrey")
+        .attr("stroke",d=>nodeImageBorderColour(nodes[d.nodeId]))
         .attr("stroke-width",4)
         .attr("onclick",(d) => {return `removeSubNodeFrom("${d.nodeId}","${d.subNodeId}")`});
 

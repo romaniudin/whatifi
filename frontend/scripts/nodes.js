@@ -539,6 +539,17 @@ const findFinancialValues = (allNodes) =>
         {
             const node = nodes[nodeId];
             if (node.finance) allFinances.push(node.finance);
+            if (node.subNodes && Object.keys(node.subNodes).length > 0)
+            {
+                Object.keys(node.subNodes).map
+                (
+                    subNodeId =>
+                    {
+                        const subNode = node.subNodes[subNodeId];
+                        if (subNode.finance) allFinances.push(subNode.finance);
+                    }
+                )
+            }
         }
     );
     return allFinances;
