@@ -112,6 +112,11 @@ const render = (newCanvas=true,delaySubnode=false) =>
     setTimeout(generateSubNodeDisplay,delaySubnode ? 150 : 0);
 }
 
+const expandedMultiplier = (node,expanded) =>
+{
+    return expanded ? (node.expanded ? 1 : 0.25) : 1;
+}
+
 let lastValidZoom = 1;
 const createCanvas = (xRange,yRange) =>
 {
@@ -382,23 +387,45 @@ const shouldDisplaySubElement = (nodeId) =>
                 (node.type == "group" && !node.expanded && !node.minimized)
             );
 }
+
 const positionNodeSubElements = () =>
 {
-    d3.selectAll(".sub-node-shadow")
+    d3.selectAll("#node-container .sub-node-shadow")
         .transition()
         .attr("stroke-width",5)
         .attr("opacity",d => shouldDisplaySubElement(d.nodeId) ? 0.25 : 0)
-        .attr("r",d => {return shouldDisplaySubElement(d.nodeId) ? subNodeRadius : 0})
-        .attr("cx",d=>{return obtainNodeXCoordinate(d,32)})
-        .attr("cy",d=>{return obtainNodeYCoordinate(d,-28)});
+        .attr("r",d => shouldDisplaySubElement(d.nodeId) ? subNodeRadius : 0)
+        .attr("cx",d=> obtainNodeXCoordinate(nodes[d.nodeId],32))
+        .attr("cy",d=> obtainNodeYCoordinate(nodes[d.nodeId],-28));
 
-    d3.selectAll(".sub-node")
+    d3.selectAll("#node-container .sub-node")
         .transition()
         .attr("stroke-width",4)
         .attr("opacity",d => shouldDisplaySubElement(d.nodeId) ? 1 : 0)
         .attr("r",d => shouldDisplaySubElement(d.nodeId) ? subNodeRadius : 0)
-        .attr("cx",d=>{return obtainNodeXCoordinate(d,30)})
-        .attr("cy",d=>{return obtainNodeYCoordinate(d,-30)});
+        .attr("cx",d=> obtainNodeXCoordinate(nodes[d.nodeId],30))
+        .attr("cy",d=> obtainNodeYCoordinate(nodes[d.nodeId],-30));
+
+    d3.selectAll("#sub-node-container .sub-node-shadow")
+        .transition()
+        .attr("stroke-width",5)
+        .attr("opacity",d => shouldDisplaySubElement(d.nodeId) ? 0.25 : 0)
+        .attr("r",d => shouldDisplaySubElement(d.nodeId) ? subNodeRadius : 0)
+        .attr("cx",d=> obtainNodeXCoordinate(nodes[d.nodeId],32))
+        .attr("cy",d=> obtainNodeYCoordinate(nodes[d.nodeId],-28));
+
+    d3.selectAll("#sub-node-container .sub-node-element")
+        .transition()
+        .attr("stroke-width",4)
+        .attr("opacity",d => shouldDisplaySubElement(d.nodeId) ? 1 : 0)
+        .attr("r",d => shouldDisplaySubElement(d.nodeId) ? subNodeRadius : 0)
+        .attr("cx",d=> obtainNodeXCoordinate(nodes[d.nodeId],30))
+        .attr("cy",d=> obtainNodeYCoordinate(nodes[d.nodeId],-30));
+
+    d3.selectAll("#sub-node-container .sub-node-text")
+        .transition()
+        .attr("x",d=> obtainNodeXCoordinate(nodes[d.nodeId],30))
+        .attr("y",d=> obtainNodeYCoordinate(nodes[d.nodeId],-30));
 }
 
 const createNodeMainElements = (node) =>
@@ -726,8 +753,8 @@ const submitNewNode = (parentNodeId,type) =>
 {
     const isGroup = type == "group";
     const nodeName = document.getElementById("add-node-name-input").value;
-    const nodeValue = isGroup ? null : document.getElementById("add-node-value-input").value;
-    const nodeFrequency = isGroup ? null : document.getElementById("add-node-frequency-input").value;
+    const nodeValue = isGroup ? null : parseFloat(document.getElementById("add-node-value-input").value);
+    const nodeFrequency = isGroup ? null : parseFloat(document.getElementById("add-node-frequency-input").value);
     const nodeStart = isGroup ? null : document.getElementById("add-node-start-input").value;
     const nodeEnd = isGroup ? null : document.getElementById("add-node-end-input").value;
 
@@ -868,6 +895,19 @@ const updateSubElementDisplay = (create,update,remove,expanded=false) =>
         }
     );
     generateSubNodes(currentSubNodesExpanded,expanded);
+
+    let expandedNode = false;
+    Object.keys(nodes).map
+    (
+        nodeId =>
+        {
+            const node = nodes[nodeId];
+            if (node.expanded) {expandedNode = true};
+        }
+    )
+
+    d3.selectAll("g .node").transition().attr("opacity",d => expandedMultiplier(d,expandedNode));
+    d3.selectAll("#link-container line").transition().attr("opacity",expandedNode ? 0.05 : 1);
 }
 
 const generateSubNodes = (subNodes,expanded) =>

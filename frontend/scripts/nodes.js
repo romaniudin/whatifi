@@ -666,7 +666,7 @@ const collapseChildNodes = (nodeId) =>
         }
     );
 
-    if (temp == childIdSelected)
+    if (temp && temp == childIdSelected)
     {
         nodes[temp].expanded = true;
     }
