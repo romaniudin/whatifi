@@ -81,7 +81,7 @@ const subNodeOverlayDetails = (nodeId,subNodeId) =>
     const node = nodes[nodeId];
     const subNode = Object.assign({},node.subNodes[subNodeId]);
     subNode["type"] = "subnode";
-    subNode["nodeName"] = subNodeId;
+    subNode["nodeId"] = nodeId;
     _nodeOverlayDetails(subNode);
 }
 
@@ -95,9 +95,9 @@ const _nodeOverlayDetails = (node) =>
 
     const div = d3.select("#node-overlay").append("div");
 
-    div.append("h5").text(`Modify: ${node.nodeName}`);
+    div.append("h5").text(`Modify: ${node.type == "subnode" ? node.subNodeName : node.nodeName}`);
 
-    generateOverlayInput(div,"Node Name","details-node-name-input","text",node.nodeName);
+    generateOverlayInput(div,"Node Name","details-node-name-input","text",node.type == "subnode" ? node.subNodeName : node.nodeName);
 
     const nodeType = node.type;
     const value = node.finance ? node.finance.value || null : null;
@@ -139,13 +139,12 @@ const _nodeOverlayDetails = (node) =>
                 const nodeFrequency = document.getElementById("details-node-frequency-input").value;
                 const nodeStart = document.getElementById("details-node-start-input").value;
                 const nodeEnd = document.getElementById("details-node-end-input").value;
-                console.log(nodeStart.value,nodeEnd);
 
                 if (verifyNodeDetails(nodeName,nodeValue,nodeFrequency,nodeStart,nodeEnd))
                 {
+                    const name = node.type == "subnode" ? "subNodeName" : "nodeName";
                     const details =
                     {
-                        "nodeName":nodeName,
                         "finance":
                         {
                             "value":nodeValue,
@@ -154,7 +153,17 @@ const _nodeOverlayDetails = (node) =>
                             "end":nodeEnd,
                         }
                     };
-                    updateNodeDetails(nodeId,details);
+                    details[name] = nodeName;
+
+                    if (node.type == "subnode")
+                    {
+                        updateSubNodeDetails(node.nodeId,node.subNodeId,details);
+                    }
+                    else
+                    {
+                        updateNodeDetails(node.nodeId,details);
+                    }
+
                     removeNodeOverlay();
                 }
             }

@@ -132,7 +132,7 @@ const addNode = (nodeName,nodeType,nodeDetails) =>
     }
 
     let nodeNumber = 1;
-    let nodeId = "node-"+nodeName.toLowerCase().replace(" ","_");
+    let nodeId = "node-"+nodeName.toLowerCase().split(" ").join("_");
     while (nodes[nodeId] != null)
     {
         nodeNumber += 1;
@@ -213,7 +213,17 @@ const addNewGroupTo = (nodeId,parentNodeId) =>
 const addNewSubNodeTo = (nodeId,nodeName,nodeDetails) =>
 {
     const node = nodes[nodeId];
-    node["subNodes"][nodeName] = nodeDetails;
+    let nodeNumber = 1;
+    let subNodeId = "sub-node-"+nodeName.toLowerCase().split(" ").join("_");
+    while (nodes[subNodeId] != null)
+    {
+        nodeNumber += 1;
+        subNodeId = "node-"+nodeName.toLowerCase()+"-"+nodeNumber.toString();
+    }
+
+    nodeDetails["subNodeId"] = subNodeId;
+    nodeDetails["subNodeName"] = nodeName;
+    node["subNodes"][subNodeId] = nodeDetails;
     if (node.expanded)
     {
         node.expanded = false;
@@ -367,6 +377,18 @@ const updateNodeDetails = (nodeId,nodeDetails) =>
     d3.select(`#${nodeId}-element .node-name`).text(node.nodeName);
 }
 
+const updateSubNodeDetails = (nodeId,subNodeId,subNodeDetails) =>
+{
+    const node = nodes[nodeId];
+    const subNode = node.subNodes[subNodeId];
+    for (const detail in subNodeDetails)
+    {
+        subNode[detail] = subNodeDetails[detail];
+    }
+
+    d3.select(`text#parent_${nodeId}_sub_${subNodeId}`).text(subNode.subNodeName);
+}
+
 const tree = (nodeId) =>
 {
     const root = {};
@@ -425,7 +447,11 @@ let selectedNodes = [];
 const toggleSelectNode = (nodeId) =>
 {
     const node = nodes[nodeId];
-    return node.selected ? unselectNode(nodeId) : selectNode(nodeId);
+    if (node.selected && node.minimized)
+    {
+        collapseChildNodes(node.parentNodes[0]);
+    }
+    node.selected ? unselectNode(nodeId) : selectNode(nodeId);
 }
 
 const selectNode = (nodeId) =>

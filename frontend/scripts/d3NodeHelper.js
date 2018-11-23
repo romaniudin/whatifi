@@ -845,6 +845,7 @@ const generateSubNodeDisplay = (expanded=false) =>
                         {
                             "nodeId":_nodeId,
                             "subNodeId":subNode,
+                            "subNodeName":_node.subNodes[subNode].subNodeName,
                             "elementId":`parent_${_nodeId}_sub_${subNode}`,
                         };
                     }
@@ -910,6 +911,9 @@ const updateSubElementDisplay = (create,update,remove,expanded=false) =>
     d3.selectAll("#link-container line").transition().attr("opacity",expandedNode ? 0.05 : 1);
 }
 
+const subNodeInitialOffsetX = 80;
+const subNodeOffsetX = 100;
+const subNodeOffsetY = 80;
 const generateSubNodes = (subNodes,expanded) =>
 {
     // Initialize elements
@@ -948,42 +952,42 @@ const generateSubNodes = (subNodes,expanded) =>
         .attr("id",d=>d.elementId)
         .attr("class","sub-node-text")
         .attr("text-anchor","middle")
-        .text(d=>d.subNodeId)
+        .text(d=>d.subNodeName)
         .attr("opacity",0)
         .attr("onclick",(d) => {return `removeSubNodeFrom("${d.nodeId}","${d.subNodeId}")`})
         .attr("oncontextmenu",(d) => {return `subNodeOverlayDetails("${d.nodeId}","${d.subNodeId}")`});
 
     // Initialize location
     d3.selectAll("#sub-node-container .sub-node-element")
-        .attr("cx",(d,i)=>obtainNodeXCoordinate(nodes[d.nodeId],80+(expanded ? 0 : i*100)))
-        .attr("cy",(d,i)=>obtainNodeYCoordinate(nodes[d.nodeId],-60))
+        .attr("cx",(d,i)=>obtainNodeXCoordinate(nodes[d.nodeId],subNodeInitialOffsetX+(expanded ? 0 : i*subNodeOffsetX)))
+        .attr("cy",(d,i)=>obtainNodeYCoordinate(nodes[d.nodeId],-subNodeOffsetY))
 
     d3.selectAll("#sub-node-container .sub-node-shadow")
-        .attr("cx",(d,i)=>obtainNodeXCoordinate(nodes[d.nodeId],82+(expanded ? 0 : i*100)))
-        .attr("cy",(d,i)=>obtainNodeYCoordinate(nodes[d.nodeId],-58))
+        .attr("cx",(d,i)=>obtainNodeXCoordinate(nodes[d.nodeId],(subNodeInitialOffsetX+2)+(expanded ? 0 : i*subNodeOffsetX)))
+        .attr("cy",(d,i)=>obtainNodeYCoordinate(nodes[d.nodeId],-(subNodeOffsetY-2)))
 
     d3.selectAll("#sub-node-container .sub-node-text")
-        .attr("x",(d,i)=>obtainNodeXCoordinate(nodes[d.nodeId],80+(expanded ? 0 : i*100)))
-        .attr("y",(d,i)=>obtainNodeYCoordinate(nodes[d.nodeId],-55))
+        .attr("x",(d,i)=>obtainNodeXCoordinate(nodes[d.nodeId],subNodeInitialOffsetX+(expanded ? 0 : i*subNodeOffsetX)))
+        .attr("y",(d,i)=>obtainNodeYCoordinate(nodes[d.nodeId],-(subNodeOffsetY-5)))
 
     // Initialize shadow
     d3.selectAll("#sub-node-container .sub-node-element")
         .transition()
         .attr("opacity",1)
-        .attr("cx",(d,i)=>obtainNodeXCoordinate(nodes[d.nodeId],80+i*100))
-        .attr("cy",(d,i)=>obtainNodeYCoordinate(nodes[d.nodeId],-60))
+        .attr("cx",(d,i)=>obtainNodeXCoordinate(nodes[d.nodeId],subNodeInitialOffsetX+i*subNodeOffsetX))
+        .attr("cy",(d,i)=>obtainNodeYCoordinate(nodes[d.nodeId],-subNodeOffsetY))
 
     d3.selectAll("#sub-node-container .sub-node-shadow")
         .transition()
         .attr("opacity",0.25)
-        .attr("cx",(d,i)=>obtainNodeXCoordinate(nodes[d.nodeId],82+i*100))
-        .attr("cy",(d,i)=>obtainNodeYCoordinate(nodes[d.nodeId],-58))
+        .attr("cx",(d,i)=>obtainNodeXCoordinate(nodes[d.nodeId],(subNodeInitialOffsetX+2)+i*subNodeOffsetX))
+        .attr("cy",(d,i)=>obtainNodeYCoordinate(nodes[d.nodeId],-(subNodeOffsetY-2)))
 
     d3.selectAll("#sub-node-container .sub-node-text")
         .transition()
         .attr("opacity",1)
-        .attr("x",(d,i)=>obtainNodeXCoordinate(nodes[d.nodeId],80+i*100))
-        .attr("y",(d,i)=>obtainNodeYCoordinate(nodes[d.nodeId],-55))
+        .attr("x",(d,i)=>obtainNodeXCoordinate(nodes[d.nodeId],subNodeInitialOffsetX+i*subNodeOffsetX))
+        .attr("y",(d,i)=>obtainNodeYCoordinate(nodes[d.nodeId],-(subNodeOffsetY-5)))
 }
 
 const subElementAction = (nodeId) =>
