@@ -72,8 +72,21 @@ const generateOverlayButton = (overlay,label,id,background="white",border="2px d
 const nodeOverlayDetails = (nodeId) =>
 {
     removeNodeOverlay();
-
     const node = nodes[nodeId];
+    _nodeOverlayDetails(node);
+}
+
+const subNodeOverlayDetails = (nodeId,subNodeId) =>
+{
+    const node = nodes[nodeId];
+    const subNode = Object.assign({},node.subNodes[subNodeId]);
+    subNode["type"] = "subnode";
+    subNode["nodeId"] = nodeId;
+    _nodeOverlayDetails(subNode);
+}
+
+const _nodeOverlayDetails = (node) =>
+{
     d3.select("#node-overlay")
         .transition().duration(tooltipTransitionDelay)
         .style("padding", "0 10px 0 10px")
@@ -82,9 +95,9 @@ const nodeOverlayDetails = (nodeId) =>
 
     const div = d3.select("#node-overlay").append("div");
 
-    div.append("h5").text(`Modify: ${node.nodeName}`);
+    div.append("h5").text(`Modify: ${node.type == "subnode" ? node.subNodeName : node.nodeName}`);
 
-    generateOverlayInput(div,"Node Name","details-node-name-input","text",node.nodeName);
+    generateOverlayInput(div,"Node Name","details-node-name-input","text",node.type == "subnode" ? node.subNodeName : node.nodeName);
 
     const nodeType = node.type;
     const value = node.finance ? node.finance.value || null : null;
@@ -126,13 +139,12 @@ const nodeOverlayDetails = (nodeId) =>
                 const nodeFrequency = document.getElementById("details-node-frequency-input").value;
                 const nodeStart = document.getElementById("details-node-start-input").value;
                 const nodeEnd = document.getElementById("details-node-end-input").value;
-                console.log(nodeStart.value,nodeEnd);
 
                 if (verifyNodeDetails(nodeName,nodeValue,nodeFrequency,nodeStart,nodeEnd))
                 {
+                    const name = node.type == "subnode" ? "subNodeName" : "nodeName";
                     const details =
                     {
-                        "nodeName":nodeName,
                         "finance":
                         {
                             "value":nodeValue,
@@ -141,7 +153,17 @@ const nodeOverlayDetails = (nodeId) =>
                             "end":nodeEnd,
                         }
                     };
-                    updateNodeDetails(nodeId,details);
+                    details[name] = nodeName;
+
+                    if (node.type == "subnode")
+                    {
+                        updateSubNodeDetails(node.nodeId,node.subNodeId,details);
+                    }
+                    else
+                    {
+                        updateNodeDetails(node.nodeId,details);
+                    }
+
                     removeNodeOverlay();
                 }
             }
@@ -158,10 +180,11 @@ const nodeOverlayDetails = (nodeId) =>
         );
 }
 
-const nodeOverlayAdd = (nodeId) =>
+const nodeOverlayAdd = (nodeId,type) =>
 {
     removeNodeOverlay();
 
+    const isGroup = type == "group";
     const node = nodes[nodeId];
     d3.select("#node-overlay")
         .transition().duration(tooltipTransitionDelay)
@@ -174,8 +197,11 @@ const nodeOverlayAdd = (nodeId) =>
     div.append("h5").text(`Add to: ${node.nodeName}`);
 
     generateOverlayInput(div,"Node Name","add-node-name-input","text",null);
-    generateOverlayInput(div,"Value","add-node-value-input","number",null);
-    generateOverlayInput(div,"Frequency (Months)","add-node-frequency-input","number",null);
+    if (!isGroup)
+    {
+        generateOverlayInput(div,"Value","add-node-value-input","number",null);
+        generateOverlayInput(div,"Frequency (Months)","add-node-frequency-input","number",null);
+    }
     generateOverlayInput(div,"Start Date","add-node-start-input","month",null);
     generateOverlayInput(div,"End Date","add-node-end-input","month",null);
 
@@ -189,7 +215,7 @@ const nodeOverlayAdd = (nodeId) =>
             "click",
             () =>
             {
-                submitNewNode(nodeId);
+                submitNewNode(nodeId,type);
             }
         );
 

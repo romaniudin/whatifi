@@ -6,7 +6,8 @@ let svg,nodeCanvas;
 const nodeShadowColour = "black";
 const nodeHighlightedColour = "gainsboro";
 const nodeTraversedBorderColour = "gainsboro";
-const nodeSelectedBorderColour = "black";
+const mainNodeRadius = 40;
+const subNodeRadius = 15;
 
 const linkUnhighlightedColour = "none";
 const linkHighlightedColour = "gainsboro";
@@ -29,17 +30,26 @@ const obtainNodeLayer = (node) =>
 }
 
 let previousLinks = {};
-const render = (newCanvas=true) =>
+const render = (newCanvas=true,delaySubnode=false) =>
 {
     let allNodes = [];
-    for (const nodeId in nodes)
-    {
-        allNodes.push(nodes[nodeId]);
-    }
+    Object.keys(nodes).map
+    (
+        nodeId =>
+        {
+            allNodes.push(nodes[nodeId]);
+        }
+    );
 
     balancedNodes = [];
     allNodes = allNodes.sort(compareNodeLevels);
-    allNodes.map(node=>balanceNodes(balancedNodes,node));
+    allNodes.map
+    (
+        node =>
+        {
+            balanceNodes(balancedNodes,node)
+        }
+    );
 
     const range = d3.extent(allNodes,(node) => node.x);
     const shift = range[1] - range[0];
@@ -86,7 +96,7 @@ const render = (newCanvas=true) =>
     previousLinks = {};
     existingLinks.concat(newLinks).map(link=>{previousLinks[link] = allLinks[link]});
 
-    const newNodes = nodeCanvas.selectAll(".node")
+    const newNodes = nodeCanvas.select("#node-container").selectAll(".node")
         .data(layeredNodes)
         .enter()
         .append("g")
@@ -99,6 +109,12 @@ const render = (newCanvas=true) =>
     createNodeOverlay("node-graph-viewbox");
 
     updateLinkElements(newLinks,existingLinks,removedLinks);
+    setTimeout(generateSubNodeDisplay,delaySubnode ? 150 : 0);
+}
+
+const expandedMultiplier = (node,expanded) =>
+{
+    return expanded ? (node.expanded ? 1 : 0.25) : 1;
 }
 
 let lastValidZoom = 1;
@@ -142,6 +158,8 @@ const createCanvas = (xRange,yRange) =>
     );
 
     nodeCanvas.append("g").attr("id","link-container");
+    nodeCanvas.append("g").attr("id","node-container");
+    nodeCanvas.append("g").attr("id","sub-node-container");
 }
 
 const clearCanvas = (canvas) =>
@@ -216,8 +234,8 @@ const generateLinks = (balancedNodes) =>
 const renderNodeSelection = (nodeId) =>
 {
     const node = nodes[nodeId];
-    d3.select(`#node-graph svg #node-graph-viewbox #${nodeId}-element .img-node`)
-        .attr("stroke", node.selected ? nodeSelectedBorderColour : nodeImageBorderColour(node));
+    d3.select(`#node-graph svg #node-graph-viewbox #${nodeId}-element .main-node`)
+        .attr("stroke", nodeBorderColour(node));
 }
 
 const renderNodeHighlight = (nodeId) =>
@@ -318,6 +336,7 @@ const obtainNodeYCoordinate = (node,offset=0) =>
 
 const createNodeElements = (node) =>
 {
+    createNodeSubElements(node);
     createNodeMainElements(node);
     createNodeAddElements(node);
     createNodeExpandElements(node);
@@ -325,58 +344,121 @@ const createNodeElements = (node) =>
 
 const positionNodeElements = () =>
 {
+    positionNodeSubElements();
     positionNodeMainElements();
     positionNodeAddElements();
     positionNodeExpandElements();
+}
+
+const createNodeSubElements = (node) =>
+{
+    const subElements = node.append("g")
+        .attr("class","sub-node-element")
+        .attr("oncontextmenu",(d) => {return `toggleSubElementsDisplay("${d.nodeId}")`})
+        .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`});
+
+    subElements.append("circle")
+        .attr("class","sub-node-shadow")
+        .attr("fill","black")
+        .attr("opacity",0)
+        .attr("r",0)
+        .attr("stroke-width",0)
+        .attr("stroke","black")
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,32)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,-28)});
+
+    subElements.append("circle")
+        .attr("class","sub-node")
+        .attr("fill", "white")
+        .attr("opacity",0)
+        .attr("r",0)
+        .attr("stroke-width",0)
+        .attr("stroke",d => nodeImageBorderColour(d))
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,30)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,-30)});
+}
+
+const shouldDisplaySubElement = (nodeId) =>
+{
+    const node = nodes[nodeId];
+    return  Object.keys(node.subNodes).length > 0 &&
+            (
+                (node.type != "group" && !node.expanded && (node.selected || !node.minimized)) || 
+                (node.type == "group" && !node.expanded && !node.minimized)
+            );
+}
+
+const positionNodeSubElements = () =>
+{
+    d3.selectAll("#node-container .sub-node-shadow")
+        .transition()
+        .attr("stroke-width",5)
+        .attr("opacity",d => shouldDisplaySubElement(d.nodeId) ? 0.25 : 0)
+        .attr("r",d => shouldDisplaySubElement(d.nodeId) ? subNodeRadius : 0)
+        .attr("cx",d=> obtainNodeXCoordinate(nodes[d.nodeId],32))
+        .attr("cy",d=> obtainNodeYCoordinate(nodes[d.nodeId],-28));
+
+    d3.selectAll("#node-container .sub-node")
+        .transition()
+        .attr("stroke-width",4)
+        .attr("opacity",d => shouldDisplaySubElement(d.nodeId) ? 1 : 0)
+        .attr("r",d => shouldDisplaySubElement(d.nodeId) ? subNodeRadius : 0)
+        .attr("cx",d=> obtainNodeXCoordinate(nodes[d.nodeId],30))
+        .attr("cy",d=> obtainNodeYCoordinate(nodes[d.nodeId],-30));
+
+    d3.selectAll("#sub-node-container .sub-node-shadow")
+        .transition()
+        .attr("stroke-width",5)
+        .attr("opacity",d => shouldDisplaySubElement(d.nodeId) ? 0.25 : 0)
+        .attr("r",d => shouldDisplaySubElement(d.nodeId) ? subNodeRadius : 0)
+        .attr("cx",d=> obtainNodeXCoordinate(nodes[d.nodeId],32))
+        .attr("cy",d=> obtainNodeYCoordinate(nodes[d.nodeId],-28));
+
+    d3.selectAll("#sub-node-container .sub-node-element")
+        .transition()
+        .attr("stroke-width",4)
+        .attr("opacity",d => shouldDisplaySubElement(d.nodeId) ? 1 : 0)
+        .attr("r",d => shouldDisplaySubElement(d.nodeId) ? subNodeRadius : 0)
+        .attr("cx",d=> obtainNodeXCoordinate(nodes[d.nodeId],30))
+        .attr("cy",d=> obtainNodeYCoordinate(nodes[d.nodeId],-30));
+
+    d3.selectAll("#sub-node-container .sub-node-text")
+        .transition()
+        .attr("x",d=> obtainNodeXCoordinate(nodes[d.nodeId],30))
+        .attr("y",d=> obtainNodeYCoordinate(nodes[d.nodeId],-30));
 }
 
 const createNodeMainElements = (node) =>
 {
     const mainNode = node.append("g")
         .attr("class","main-node-element")
+        .attr("oncontextmenu",(d) => {return `toggleSubElementsDisplay("${d.nodeId}")`})
         .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`});
 
     mainNode.append("circle")
         .attr("class","main-node-shadow")
         .attr("fill","black")
         .attr("opacity",0)
+        .attr("r",0)
+        .attr("stroke-width",0)
         .attr("stroke","black")
         .attr("cx",d=>{return obtainNodeXCoordinate(d,2)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,2)});
 
     mainNode.append("circle")
-        .attr("class","img-node-shadow")
-        .attr("fill","black")
-        .attr("opacity",0)
-        .attr("stroke","black")
-        .attr("cx",d=>{return obtainNodeXCoordinate(d,32)})
-        .attr("cy",d=>{return obtainNodeYCoordinate(d,-28)});
-
-    mainNode.append("circle")
         .attr("class","main-node")
         .attr("fill", d => d.highlighted ? nodeHighlightedColour : nodeBackgroundColour(d))
         .attr("opacity",0)
+        .attr("r",0)
+        .attr("stroke-width",0)
         .attr("stroke",d => nodeBorderColour(d))
-        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`})
         .attr("cx",d=>{return obtainNodeXCoordinate(d,0)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,0)});
-
-    mainNode.append("circle")
-        .attr("class","img-node")
-        .attr("fill", "white")
-        .attr("opacity",0)
-        .attr("stroke",d => d.selected ? nodeSelectedBorderColour : nodeImageBorderColour(d))
-        .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`})
-        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`})
-        .attr("cx",d=>{return obtainNodeXCoordinate(d,30)})
-        .attr("cy",d=>{return obtainNodeYCoordinate(d,-30)});
 
     mainNode.append("text")
         .attr("class","node-name")
         .attr("text-anchor","middle")
         .attr("opacity",0)
-        .attr("onclick",(d) => {return `onClickAction("${d.nodeId}")`})
-        .attr("oncontextmenu",(d) => {return `toggleSelectNode("${d.nodeId}")`})
         .attr("x",d=>{return obtainNodeXCoordinate(d,0)})
         .attr("y",d=>{return obtainNodeYCoordinate(d,5)});
 }
@@ -387,33 +469,17 @@ const positionNodeMainElements = () =>
         .transition()
         .attr("stroke-width",5)
         .attr("opacity",0.25)
-        .attr("r",d => d.minimized && !d.selected ? 0 : 40)
+        .attr("r",d => d.minimized && !d.selected ? 0 : mainNodeRadius)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,2)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,2)});
-
-    d3.selectAll(".img-node-shadow")
-        .transition()
-        .attr("stroke-width",5)
-        .attr("opacity",0.25)
-        .attr("r",d => d.minimized && !d.selected ? 0 :15)
-        .attr("cx",d=>{return obtainNodeXCoordinate(d,32)})
-        .attr("cy",d=>{return obtainNodeYCoordinate(d,-28)});
 
     d3.selectAll(".main-node")
         .transition()
         .attr("opacity",1)
         .attr("stroke-width",4)
-        .attr("r",d => d.minimized && !d.selected ? 0 :40)
+        .attr("r",d => d.minimized && !d.selected ? 0 :mainNodeRadius)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,0)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,0)});
-
-    d3.selectAll(".img-node")
-        .transition()
-        .attr("opacity",1)
-        .attr("stroke-width",4)
-        .attr("r",d => d.minimized && !d.selected ? 0 :15)
-        .attr("cx",d=>{return obtainNodeXCoordinate(d,30)})
-        .attr("cy",d=>{return obtainNodeYCoordinate(d,-30)});
 
     d3.selectAll(".node-name")
         .transition()
@@ -429,11 +495,13 @@ const createNodeAddElements = (node) =>
 {
     const addNode = node.append("g")
         .attr("class","add-child-element")
-        .attr("onclick",(d) => {if (d.type=="group") return `nodeOverlayAdd("${d.nodeId}")`;else return ""})
+        .attr("onclick",(d) => {if (d.type=="group") return `nodeOverlayAdd("${d.nodeId}","default")`;else return ""})
 
     addNode.append("circle")
         .attr("class","add-node-shadow")
         .attr("fill","black")
+        .attr("r",0)
+        .attr("stroke-width",0)
         .attr("opacity",(d)=>{if (d.type=="group") return 0.25;else return 0;})
         .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeDistance/2+1)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,1)});
@@ -441,6 +509,8 @@ const createNodeAddElements = (node) =>
     addNode.append("circle")
         .attr("class","add-child-plus-circle")
         .attr("fill","steelblue")
+        .attr("r",0)
+        .attr("stroke-width",0)
         .attr("opacity",1)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeDistance/2)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,0)});
@@ -466,6 +536,8 @@ const createNodeAddElements = (node) =>
     addNode.append("circle")
         .attr("class","add-node")
         .attr("opacity",0)
+        .attr("r",0)
+        .attr("stroke-width",0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeDistance/2)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,0)});
 }
@@ -516,12 +588,16 @@ const createNodeExpandElements = (node) =>
         .attr("class","expand-group-element-shadow")
         .attr("fill","black")
         .attr("opacity",0.25)
+        .attr("r",0)
+        .attr("stroke-width",0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,52)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,52)});
 
     expandGroup.append("circle")
         .attr("class","expand-group-ellipsis")
         .attr("fill",d => nodeImageBackgroundColour(d))
+        .attr("r",0)
+        .attr("stroke-width",0)
         .attr("stroke",d => nodeImageBorderColour(d))
         .attr("cx",d=>{return obtainNodeXCoordinate(d,50)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,50)});
@@ -529,18 +605,24 @@ const createNodeExpandElements = (node) =>
     expandGroup.append("circle")
         .attr("class","expand-group-ellipsis-0")
         .attr("fill",d => nodeImageBorderColour(d))
+        .attr("r",0)
+        .attr("stroke-width",0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d, d.minimized ? 50 : 56)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d, d.minimized ? 56 : 50)});
 
     expandGroup.append("circle")
         .attr("class","expand-group-ellipsis-1")
         .attr("fill",d => nodeImageBorderColour(d))
+        .attr("r",0)
+        .attr("stroke-width",0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,50)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,50)});
 
     expandGroup.append("circle")
         .attr("class","expand-group-ellipsis-2")
         .attr("fill",d => nodeImageBorderColour(d))
+        .attr("r",0)
+        .attr("stroke-width",0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d, d.minimized ? 50 : 44)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d, d.minimized ? 44 : 50)});
 }
@@ -556,7 +638,7 @@ const positionNodeExpandElements = (node) =>
     d3.selectAll(".expand-group-ellipsis")
         .transition()
         .attr("stroke-width",3)
-        .attr("r",d => d.type == "group" ? 15 : 0)
+        .attr("r",d => d.type == "group" ? subNodeRadius : 0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,50)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,50)});
 
@@ -623,16 +705,13 @@ const updateLinkElements = (newLinks,currentLinks,removedLinks) =>
             {
                 current.attr("opacity",0);
             }
-
-
-
         }
     )
 
     d3.selectAll("#link-container line").transition().attr("opacity",1);
 }
 
-const verifyNodeDetails = (nodeName,nodeValue,nodeFrequency,nodeStart,nodeEnd) =>
+const verifyNodeDetails = (nodeName,nodeValue,nodeFrequency,nodeStart,nodeEnd,isGroup) =>
 {
     let valid = true;
 
@@ -641,56 +720,297 @@ const verifyNodeDetails = (nodeName,nodeValue,nodeFrequency,nodeStart,nodeEnd) =
         valid &= false;
         toast("Please enter node name");
     }
-    if (!nodeValue || nodeValue == "")
+
+    if (!isGroup)
     {
-        valid &= false;
-        toast("Please enter value");
-    }
-    if (!nodeFrequency || nodeFrequency == "" || nodeFrequency <= 0)
-    {
-        valid &= false;
-        toast("Please enter a frequency (>=0)");
-    }
-    if (!nodeStart || nodeStart == "" || nodeStart < 0)
-    {
-        valid &= false;
-        toast("Please enter a start date");
-    }
-    if (nodeEnd && (nodeStart > nodeEnd))
-    {
-        valid &= false;
-        toast("Please enter a end date (>=start date)");
+        if (!nodeValue || nodeValue == "")
+        {
+            valid &= false;
+            toast("Please enter value");
+        }
+        if (!nodeFrequency || nodeFrequency == "" || nodeFrequency <= 0)
+        {
+            valid &= false;
+            toast("Please enter a frequency (>=0)");
+        }
+
+        if (!nodeStart || nodeStart == "" || nodeStart < 0)
+        {
+            valid &= false;
+            toast("Please enter a start date");
+        }
+        if (nodeEnd && (nodeStart > nodeEnd))
+        {
+            valid &= false;
+            toast("Please enter a end date (>=start date)");
+        }
     }
 
     return valid;
 }
 
-const submitNewNode = (parentNodeId) =>
+const submitNewNode = (parentNodeId,type) =>
 {
+    const isGroup = type == "group";
     const nodeName = document.getElementById("add-node-name-input").value;
-    const nodeValue = document.getElementById("add-node-value-input").value;
-    const nodeFrequency = document.getElementById("add-node-frequency-input").value;
-    const nodeStart = document.getElementById("add-node-start-input").value;
-    const nodeEnd = document.getElementById("add-node-end-input").value;
+    const nodeValue = isGroup ? null : parseFloat(document.getElementById("add-node-value-input").value);
+    const nodeFrequency = isGroup ? null : parseFloat(document.getElementById("add-node-frequency-input").value);
+    const nodeStart = isGroup ? null : document.getElementById("add-node-start-input").value;
+    const nodeEnd = isGroup ? null : document.getElementById("add-node-end-input").value;
 
-    if (verifyNodeDetails(nodeName,nodeValue,nodeFrequency,nodeStart,nodeEnd))
+    if (verifyNodeDetails(nodeName,nodeValue,nodeFrequency,nodeStart,nodeEnd,isGroup))
     {
-        addNewNodeTo
-        (
-            parentNodeId,
-            nodeName,
-            "income",
+        const nodeDetails =
+        {
+            "finance":
             {
-                "finance":
-                {
-                    "value":nodeValue,
-                    "start":nodeStart,
-                    "end":nodeEnd,
-                    "frequency":nodeFrequency,
-                }
+                "value":nodeValue,
+                "start":nodeStart,
+                "end":nodeEnd,
+                "frequency":nodeFrequency,
             }
-        );
+        };
+
+        if (type == "sub")
+        {
+            if (nodes[parentNodeId].subNodes[nodeName])
+            {
+                return toast("Node name already exists");
+            }
+
+            addNewSubNodeTo
+            (
+                parentNodeId,
+                nodeName,
+                nodeDetails
+            );
+        }
+        else
+        {
+            addNewNodeTo
+            (
+                parentNodeId,
+                nodeName,
+                isGroup ? "group" : "income",
+                isGroup ? {} : nodeDetails
+            );
+        }
         removeNodeOverlay();
     }
+}
+
+let currentNodeExpanded;
+let currentSubNodesExpanded;
+const toggleSubElementsDisplay = (nodeId) =>
+{
+    const node = nodes[nodeId];
+    node.expanded = Object.keys(node.subNodes).length == 0 ? false : !node.expanded;
+    if (Object.keys(node.subNodes).length == 0) return;
+
+    subElementAction(nodeId);
+
+    Object.keys(nodes).map
+    (
+        _nodeId =>
+        {
+            const _node = nodes[_nodeId];
+            if (_nodeId != nodeId && _node.expanded)
+            {
+                _node.expanded = false;
+                subElementAction(_nodeId);
+            }
+        }
+    );
+
+    generateSubNodeDisplay(true);
+}
+
+const generateSubNodeDisplay = (expanded=false) =>
+{
+    const expected = {};
+    currentNodeExpanded = null;
+    Object.keys(nodes).map
+    (
+        _nodeId =>
+        {
+            const _node = nodes[_nodeId];
+            if (_node.expanded)
+            {
+                currentNodeExpanded = _nodeId;
+                Object.keys(_node.subNodes).map
+                (
+                    subNode =>
+                    {
+                        expected[`parent_${_nodeId}_sub_${subNode}`] =
+                        {
+                            "nodeId":_nodeId,
+                            "subNodeId":subNode,
+                            "subNodeName":_node.subNodes[subNode].subNodeName,
+                            "elementId":`parent_${_nodeId}_sub_${subNode}`,
+                        };
+                    }
+                );
+            }
+        }
+    )
+
+    const create = [], update = [], remove = [];
+    Object.keys(expected).map
+    (
+        subNode =>
+        {
+            if (!currentSubNodesExpanded || currentSubNodesExpanded[subNode] == null)
+            {
+                create[subNode] = expected[subNode];
+            }
+            else
+            {
+                update[subNode] = expected[subNode];
+            }
+        }
+    )
+    if (currentSubNodesExpanded)
+    {
+        Object.keys(currentSubNodesExpanded).map
+        (
+            subNode =>
+            {
+                if (expected[subNode] == null)
+                {
+                    remove[subNode] = currentSubNodesExpanded[subNode];
+                }
+            }
+        )
+    }
+    updateSubElementDisplay(create,update,remove,expanded);
+}
+
+const updateSubElementDisplay = (create,update,remove,expanded=false) =>
+{
+    currentSubNodesExpanded = Object.assign({},create,update);
+    Object.keys(remove).map
+    (
+        subNode =>
+        {
+            d3.selectAll(`#${subNode}`).remove();
+        }
+    );
+    generateSubNodes(currentSubNodesExpanded,expanded);
+
+    let expandedNode = false;
+    Object.keys(nodes).map
+    (
+        nodeId =>
+        {
+            const node = nodes[nodeId];
+            if (node.expanded) {expandedNode = true};
+        }
+    )
+
+    d3.selectAll("g .node").transition().attr("opacity",d => expandedMultiplier(d,expandedNode));
+    d3.selectAll("#link-container line").transition().attr("opacity",expandedNode ? 0.05 : 1);
+}
+
+const subNodeInitialOffsetX = 80;
+const subNodeOffsetX = 100;
+const subNodeOffsetY = 80;
+const generateSubNodes = (subNodes,expanded) =>
+{
+    // Initialize elements
+    d3.select("#sub-node-container").selectAll(".sub-node-shadow")
+        .data(Object.keys(subNodes).map(id => data = Object.assign({},subNodes[id])))
+        .enter()
+        .append("circle")
+        .attr("id",d=>d.elementId)
+        .attr("class","sub-node-shadow")
+        .attr("r",mainNodeRadius)
+        .attr("opacity",0)
+        .attr("fill","black")
+        .attr("stroke","black")
+        .attr("stroke-width",5)
+        .attr("onclick",(d) => {return `removeSubNodeFrom("${d.nodeId}","${d.subNodeId}")`})
+        .attr("oncontextmenu",(d) => {return `subNodeOverlayDetails("${d.nodeId}","${d.subNodeId}")`});
+
+    d3.select("#sub-node-container").selectAll(".sub-node-element")
+        .data(Object.keys(subNodes).map(id => data = Object.assign({},subNodes[id])))
+        .enter()
+        .append("circle")
+        .attr("id",d=>d.elementId)
+        .attr("class","sub-node-element")
+        .attr("r",mainNodeRadius)
+        .attr("opacity",0)
+        .attr("fill","white")
+        .attr("stroke",d=>nodeImageBorderColour(nodes[d.nodeId]))
+        .attr("stroke-width",4)
+        .attr("onclick",(d) => {return `removeSubNodeFrom("${d.nodeId}","${d.subNodeId}")`})
+        .attr("oncontextmenu",(d) => {return `subNodeOverlayDetails("${d.nodeId}","${d.subNodeId}")`});
+
+    d3.select("#sub-node-container").selectAll(".sub-node-text")
+        .data(Object.keys(subNodes).map(id => data = Object.assign({},subNodes[id])))
+        .enter()
+        .append("text")
+        .attr("id",d=>d.elementId)
+        .attr("class","sub-node-text")
+        .attr("text-anchor","middle")
+        .text(d=>d.subNodeName)
+        .attr("opacity",0)
+        .attr("onclick",(d) => {return `removeSubNodeFrom("${d.nodeId}","${d.subNodeId}")`})
+        .attr("oncontextmenu",(d) => {return `subNodeOverlayDetails("${d.nodeId}","${d.subNodeId}")`});
+
+    // Initialize location
+    d3.selectAll("#sub-node-container .sub-node-element")
+        .attr("cx",(d,i)=>obtainNodeXCoordinate(nodes[d.nodeId],subNodeInitialOffsetX+(expanded ? 0 : i*subNodeOffsetX)))
+        .attr("cy",(d,i)=>obtainNodeYCoordinate(nodes[d.nodeId],-subNodeOffsetY))
+
+    d3.selectAll("#sub-node-container .sub-node-shadow")
+        .attr("cx",(d,i)=>obtainNodeXCoordinate(nodes[d.nodeId],(subNodeInitialOffsetX+2)+(expanded ? 0 : i*subNodeOffsetX)))
+        .attr("cy",(d,i)=>obtainNodeYCoordinate(nodes[d.nodeId],-(subNodeOffsetY-2)))
+
+    d3.selectAll("#sub-node-container .sub-node-text")
+        .attr("x",(d,i)=>obtainNodeXCoordinate(nodes[d.nodeId],subNodeInitialOffsetX+(expanded ? 0 : i*subNodeOffsetX)))
+        .attr("y",(d,i)=>obtainNodeYCoordinate(nodes[d.nodeId],-(subNodeOffsetY-5)))
+
+    // Initialize shadow
+    d3.selectAll("#sub-node-container .sub-node-element")
+        .transition()
+        .attr("opacity",1)
+        .attr("cx",(d,i)=>obtainNodeXCoordinate(nodes[d.nodeId],subNodeInitialOffsetX+i*subNodeOffsetX))
+        .attr("cy",(d,i)=>obtainNodeYCoordinate(nodes[d.nodeId],-subNodeOffsetY))
+
+    d3.selectAll("#sub-node-container .sub-node-shadow")
+        .transition()
+        .attr("opacity",0.25)
+        .attr("cx",(d,i)=>obtainNodeXCoordinate(nodes[d.nodeId],(subNodeInitialOffsetX+2)+i*subNodeOffsetX))
+        .attr("cy",(d,i)=>obtainNodeYCoordinate(nodes[d.nodeId],-(subNodeOffsetY-2)))
+
+    d3.selectAll("#sub-node-container .sub-node-text")
+        .transition()
+        .attr("opacity",1)
+        .attr("x",(d,i)=>obtainNodeXCoordinate(nodes[d.nodeId],subNodeInitialOffsetX+i*subNodeOffsetX))
+        .attr("y",(d,i)=>obtainNodeYCoordinate(nodes[d.nodeId],-(subNodeOffsetY-5)))
+}
+
+const subElementAction = (nodeId) =>
+{
+    const node = nodes[nodeId];
+    const expanded = node.expanded;
+    const offset = expanded ? 2 : 1;
+
+    const subElements = d3.selectAll(`#${nodeId}-element`);
+    subElements.selectAll(".sub-node-shadow")
+        .transition()
+        .attr("opacity",expanded ? 0 : 0.25)
+        .attr("r",expanded ? mainNodeRadius : subNodeRadius)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,32*offset)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,-28*offset)});
+
+    subElements.selectAll(".sub-node")
+        .transition()
+        .attr("opacity",expanded ? 0 : 1)
+        .attr("r",expanded == 2 ? mainNodeRadius : subNodeRadius)
+        .attr("cx",d=>{return obtainNodeXCoordinate(d,30*offset)})
+        .attr("cy",d=>{return obtainNodeYCoordinate(d,-30*offset)});
+
+    return expanded;
 }
 

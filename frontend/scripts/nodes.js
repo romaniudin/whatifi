@@ -132,7 +132,7 @@ const addNode = (nodeName,nodeType,nodeDetails) =>
     }
 
     let nodeNumber = 1;
-    let nodeId = "node-"+nodeName.toLowerCase().replace(" ","_");
+    let nodeId = "node-"+nodeName.toLowerCase().split(" ").join("_");
     while (nodes[nodeId] != null)
     {
         nodeNumber += 1;
@@ -146,8 +146,10 @@ const addNode = (nodeName,nodeType,nodeDetails) =>
         "level":0,
         "parentNodes":[],
         "childrenNodes":[],
+        "subNodes":{},
         "selected":false,
         "highlighted":false,
+        "expanded":false,
         "toInherit":null,
         "type":nodeType,
     };
@@ -164,33 +166,180 @@ const addNode = (nodeName,nodeType,nodeDetails) =>
     return nodeId;
 }
 
+const addNewGroupTo = (nodeId,parentNodeId) =>
+{
+    const node = nodes[nodeId];
+    const parentNode = nodes[parentNodeId];
+
+    node.toInherit = parentNode.toInherit;
+    parentNode.toInherit = node.nodeId;
+    let nodeLevel = (parentNode.level+1);
+
+    if (parentNode.childrenNodes.length > 0)
+    {
+        nodeLevel += (parentNode.childrenNodes.length > 0);
+        parentNode.childrenNodes.map
+        (
+            childrenNodeId =>
+            {
+                const childNode = nodes[childrenNodeId];
+                childNode.childrenNodes.push(node.nodeId);
+
+                const index = childNode.childrenNodes.indexOf(node.toInherit);
+                if (node.toInherit && index != -1)
+                {
+                    childNode.childrenNodes.splice(index,1);
+                    node.parentNodes.push(childrenNodeId);
+                }
+            }
+        );
+    }
+    else
+    {
+        parentNode.childrenNodes.push(nodeId);
+    }
+
+    shiftNodes(nodeLevel-1,1);
+    node.level = nodeLevel;
+
+    if (node.toInherit)
+    {
+        node.childrenNodes = [node.toInherit];
+        const inheritedNode = nodes[node.toInherit];
+        inheritedNode.parentNodes = [nodeId];
+    }
+}
+
+const addNewSubNodeTo = (nodeId,nodeName,nodeDetails) =>
+{
+    const node = nodes[nodeId];
+    let nodeNumber = 1;
+    let subNodeId = "sub-node-"+nodeName.toLowerCase().split(" ").join("_");
+    while (nodes[subNodeId] != null)
+    {
+        nodeNumber += 1;
+        subNodeId = "node-"+nodeName.toLowerCase()+"-"+nodeNumber.toString();
+    }
+
+    nodeDetails["subNodeId"] = subNodeId;
+    nodeDetails["subNodeName"] = nodeName;
+    node["subNodes"][subNodeId] = nodeDetails;
+    if (node.expanded)
+    {
+        node.expanded = false;
+        generateSubNodeDisplay();
+        node.expanded = true;
+        generateSubNodeDisplay();
+    }
+    else
+    {
+        render(false);
+    }
+}
+
+const removeSubNodeFrom = (nodeId,nodeName) =>
+{
+    const node = nodes[nodeId];
+    delete(node["subNodes"][nodeName]);
+    generateSubNodeDisplay();
+}
+const addNewNodeTo = (parentId,nodeName,type,nodeDetails) =>
+{
+    const node = addNode(nodeName,type,nodeDetails);
+    const isGroup = type == "group";
+    const parentNode = nodes[parentId];
+
+    if (isGroup && parentNode.type != "me")
+    {
+        addNewGroupTo(node,parentId);
+    }
+    else
+    {
+        addChild(node,parentId,!isGroup,isGroup);
+    }
+
+    render(false);
+    return node;
+}
+
+const shiftNodes = (level,shift) =>
+{
+    orderedNodes.map
+    (
+        nodeId =>
+        {
+            const childNode = nodes[nodeId];
+            childNode.level += childNode.level > level ? shift : 0;
+        }
+    )
+}
+
+const removeChildren = (nodeId) =>
+{
+    const node = nodes[nodeId];
+    const toRemove = node.childrenNodes.concat([]);
+    toRemove.map
+    (
+        childNodeId =>
+        {
+            const childNode = nodes[childNodeId];
+            if (childNode.type != "group") removeNode(childNodeId);
+        }
+    );
+}
+
 const removeNode = (nodeId) =>
 {
     const node = nodes[nodeId];
 
-    if (nodes[node.parentNodes[0]].childrenNodes.length == 1)
+    if (node.type == "group")
     {
-        toast("Cannot remove - last node of the group");
-        flashNode(nodeId);
-        flashNode(node.parentNodes[0]);
-        return;
+        removeChildren(nodeId);
+
+        Object.keys(nodes).map
+        (
+            _nodeId =>
+            {
+                const _node = nodes[_nodeId];
+                if (_node.toInherit == nodeId)
+                {
+                    _node.toInherit = node.toInherit;
+                }
+            }
+        )
     }
 
+    let onlyChild = true;
     node.parentNodes.map
     (
         parentNodeId =>
         {
             const parentNode = nodes[parentNodeId];
-            const index = parentNode.childrenNodes.indexOf(nodeId);
-
-            if (index != -1) parentNode.childrenNodes.splice(index,1);
+            const nodeIndex = parentNode.childrenNodes.indexOf(nodeId);
+            parentNode.childrenNodes.splice(nodeIndex,1);
 
             if (parentNode.childrenNodes.length == 0)
             {
-                parentNode.childrenNodes.push(parentNode.toInherit);
+                if (node.childrenNodes.length > 0)
+                {
+                    parentNode.childrenNodes = node.childrenNodes.concat([]);
+                }
+                else if (parentNode.toInherit)
+                {
+                    parentNode.childrenNodes.push(parentNode.toInherit);
+                }
+                else
+                {
+                    parentNode.childrenNodes = [];
+                }
+            }
+            else
+            {
+                onlyChild = false;
             }
         }
-    );
+    )
+    if (onlyChild) shiftNodes(node.level,-1);
 
     node.childrenNodes.map
     (
@@ -203,7 +352,7 @@ const removeNode = (nodeId) =>
 
             if (childNode.parentNodes.length == 0)
             {
-                childNode.parentNodes.push(node.parentNodes[0]);
+                childNode.parentNodes = node.parentNodes;
             }
         }
     );
@@ -228,11 +377,16 @@ const updateNodeDetails = (nodeId,nodeDetails) =>
     d3.select(`#${nodeId}-element .node-name`).text(node.nodeName);
 }
 
-const addNewNodeTo = (parentId,nodeName,type,nodeDetails) =>
+const updateSubNodeDetails = (nodeId,subNodeId,subNodeDetails) =>
 {
-    const node = addNode(nodeName,type,nodeDetails);
-    addChild(node,parentId,true);
-    render(false);
+    const node = nodes[nodeId];
+    const subNode = node.subNodes[subNodeId];
+    for (const detail in subNodeDetails)
+    {
+        subNode[detail] = subNodeDetails[detail];
+    }
+
+    d3.select(`text#parent_${nodeId}_sub_${subNodeId}`).text(subNode.subNodeName);
 }
 
 const tree = (nodeId) =>
@@ -293,7 +447,11 @@ let selectedNodes = [];
 const toggleSelectNode = (nodeId) =>
 {
     const node = nodes[nodeId];
-    return node.selected ? unselectNode(nodeId) : selectNode(nodeId);
+    if (node.selected && node.minimized)
+    {
+        collapseChildNodes(node.parentNodes[0]);
+    }
+    node.selected ? unselectNode(nodeId) : selectNode(nodeId);
 }
 
 const selectNode = (nodeId) =>
@@ -407,6 +565,17 @@ const findFinancialValues = (allNodes) =>
         {
             const node = nodes[nodeId];
             if (node.finance) allFinances.push(node.finance);
+            if (node.subNodes && Object.keys(node.subNodes).length > 0)
+            {
+                Object.keys(node.subNodes).map
+                (
+                    subNodeId =>
+                    {
+                        const subNode = node.subNodes[subNodeId];
+                        if (subNode.finance) allFinances.push(subNode.finance);
+                    }
+                )
+            }
         }
     );
     return allFinances;
@@ -460,12 +629,14 @@ const collapseChildNodes = (nodeId) =>
 
     let childSelected = false;
     let isOnlyChildAGroup = true;
+    let childIdSelected;
     node.childrenNodes.map
     (
         (childNodeId) =>
         {
             childSelected |= nodes[childNodeId].selected;
             isOnlyChildAGroup &= nodes[childNodeId].type == "group";
+            if (nodes[childNodeId].selected) childIdSelected = childNodeId;
         }
     );
 
@@ -488,6 +659,13 @@ const collapseChildNodes = (nodeId) =>
             node["childrenNodes"].map( (nodeId) => {flashNode(nodeId)} );
             return;
         }
+    }
+
+    const temp = currentNodeExpanded;
+    if (temp)
+    {
+        nodes[temp].expanded = false;
+        generateSubNodeDisplay();
     }
 
     node["minimized"] = !node["minimized"];
@@ -514,7 +692,11 @@ const collapseChildNodes = (nodeId) =>
         }
     );
 
-    render(false);
+    if (temp && temp == childIdSelected)
+    {
+        nodes[temp].expanded = true;
+    }
+    render(false,true);
 }
 
 const reverseTraverse = (nodeId,traversedNodes,showGraph=true,fastTraverse=false) =>

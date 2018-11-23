@@ -29,7 +29,7 @@ const imageBackgroundScheme =
 
 const nodeBorderColour = (node) =>
 {
-    return borderScheme[node.type] || borderScheme["default"];
+    return (node.selected ? "slategrey"  : borderScheme[node.type]) || borderScheme["default"];
 }
 
 const nodeImageBorderColour = (node) =>

@@ -2,11 +2,11 @@ const nodeMenuPadding = 6;
 const nodeMenuFontSize = 12;
 const nodeMenuActionOffset = nodeMenuPadding + nodeMenuFontSize;
 
-const nodeMenuWidth = 100;
-const nodeMenuCloseRadius = 6;
-const nodeMenuCloseHeight = 7;
-const nodeMenuCloseWidth = 2;
-const nodeMenuBorder = 2;
+const nodeMenuWidth = 90;
+const nodeMenuCloseRadius = 10;
+const nodeMenuCloseHeight = 10;
+const nodeMenuCloseWidth = 3;
+const nodeMenuBorder = 3;
 
 const generateNodeMenu = (nodeId) =>
 {
@@ -58,7 +58,7 @@ const generateNodeMenuElements = (container,elements) =>
             "transform",
             d =>
             {
-                return `translate(${obtainNodeXCoordinate(d,101.75)},${obtainNodeYCoordinate(d,-21)}) rotate(45)`
+                return `translate(${obtainNodeXCoordinate(d,92.5)},${obtainNodeYCoordinate(d,-22)}) rotate(45)`
             }
         );
 
@@ -71,7 +71,7 @@ const generateNodeMenuElements = (container,elements) =>
             "transform",
             d =>
             {
-                return `translate(${obtainNodeXCoordinate(d,96.75)},${obtainNodeYCoordinate(d,-19.5)}) rotate(-45)`
+                return `translate(${obtainNodeXCoordinate(d,85.5)},${obtainNodeYCoordinate(d,-20)}) rotate(-45)`
             }
         );
 
@@ -143,9 +143,19 @@ const generateNodeMenu_compareChildren = (container,nodeId,offset=0) =>
     generateNodeMenuItem(container,"Compare Group",`compareChildNodes(\"${nodeId}\");nodeMenuCloseAll();`,offset);
 }
 
+const generateNodeMenu_addGroupNode = (container,nodeId,offset=0) =>
+{
+    generateNodeMenuItem(container,"Add Group",`nodeOverlayAdd(\"${nodeId}\","group");nodeMenuCloseAll();`,offset);
+}
+
+const generateNodeMenu_addSubNode = (container,nodeId,offset=0) =>
+{
+    generateNodeMenuItem(container,"Add Node",`nodeOverlayAdd(\"${nodeId}\","sub");nodeMenuCloseAll();`,offset);
+}
+
 const generateNodeMenu_removeNode = (container,nodeId,offset=0) =>
 {
-    generateNodeMenuItem(container,"Remove Node",`removeNode(\"${nodeId}\");nodeMenuCloseAll();`,offset);
+    generateNodeMenuItem(container,"Remove",`removeNode(\"${nodeId}\");nodeMenuCloseAll();`,offset);
 }
 
 const generateNodeMenu_editDetails = (container,nodeId,offset=0) =>
@@ -171,6 +181,6 @@ const nodeMenuCloseAll = () =>
 const nodeMenuGenerator =
 {
     "me":[generateNodeMenu_traverseAll,generateNodeMenu_editDetails],
-    "group":[generateNodeMenu_compareChildren,generateNodeMenu_editDetails],
-    "default":[generateNodeMenu_toggle,generateNodeMenu_traverse,generateNodeMenu_removeNode,generateNodeMenu_editDetails],
+    "group":[generateNodeMenu_compareChildren,generateNodeMenu_collapseChildren,generateNodeMenu_addGroupNode,generateNodeMenu_addSubNode,generateNodeMenu_editDetails,generateNodeMenu_removeNode],
+    "default":[generateNodeMenu_toggle,generateNodeMenu_traverse,generateNodeMenu_addSubNode,generateNodeMenu_editDetails,generateNodeMenu_removeNode],
 }
