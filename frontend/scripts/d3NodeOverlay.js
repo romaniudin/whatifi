@@ -180,7 +180,7 @@ const _nodeOverlayDetails = (node) =>
         );
 }
 
-const nodeOverlayAdd = (nodeId,type) =>
+const nodeOverlayAdd = (nodeId,type,isVariant=false) =>
 {
     removeNodeOverlay();
 
@@ -215,7 +215,8 @@ const nodeOverlayAdd = (nodeId,type) =>
             "click",
             () =>
             {
-                submitNewNode(nodeId,type);
+                console.log(type);
+                submitNewNode(nodeId,type,isVariant);
             }
         );
 

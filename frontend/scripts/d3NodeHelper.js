@@ -47,9 +47,16 @@ const render = (newCanvas=true,delaySubnode=false) =>
     (
         node =>
         {
-            balanceNodes(balancedNodes,node)
+            bucketNodes(balancedNodes,node)
         }
     );
+	balancedNodes.map
+	(
+		level =>
+		{
+			balanceLevel(level)
+		}
+	)
 
     const range = d3.extent(allNodes,(node) => node.x);
     const shift = range[1] - range[0];
@@ -179,17 +186,54 @@ const balanceLevel = (allNodes) =>
     const levelLength = allNodes.length;
     let start = levelLength % 2 == 1 ? parseInt(levelLength/2)*nodeDistance : (levelLength/2-1)*nodeDistance+nodeDistance/2;
 
+	let currentPlacement = 0;
+	let totalOffset = 0;
+	let isSubNode = false;
     allNodes.map
     (
-        (node) =>
+        (node,i) =>
         {
-            node.x = start;
-            start -= nodeDistance;
+			const childrenCount = node.childrenNodes.length;
+			const offsetMultiplier = (i == 0 || i == levelLength - 1) ? 0.5 : 1;
+			const nodeOffset = (childrenCount > 0 ? childrenCount  - 1 : 0) * offsetMultiplier * nodeDistance;
+
+			if (node.subType != "subNode")
+			{
+				node.x = currentPlacement;
+			}
+			else
+			{
+				const parentNode = nodes[node.parentNodes[0]];
+				const sibilings = parentNode.childrenNodes.length;
+				const childIndex = parentNode.childrenNodes.indexOf(node.nodeId);
+				const placement = parentNode.x - childIndex*nodeDistance +((sibilings % 2 == 1) ? parseInt(sibilings/2)*nodeDistance : (sibilings/2-1)*nodeDistance+nodeDistance/2);
+
+				node.x = placement;
+			}
+	
+			currentPlacement += nodeOffset + nodeDistance;
+			totalOffset += nodeOffset + (i < levelLength-1) ? nodeDistance : 0;
+
+			console.log(node.nodeId,totalOffset);
         }
     );
+
+	if (levelLength > 1)
+	{
+		allNodes.map
+		(
+			node =>
+			{
+				if (node.subType != "subNode")
+				{
+					node.x -= totalOffset/2
+				}
+			}
+		)
+	}
 }
 
-const balanceNodes = (allNodes,node) =>
+const bucketNodes = (allNodes,node) =>
 {
     while(!(allNodes.length > node.level))
     {
@@ -198,7 +242,7 @@ const balanceNodes = (allNodes,node) =>
 
     allNodes[node.level].push(node);
 
-    balanceLevel(allNodes[node.level]);
+    //balanceLevel(allNodes[node.level]);
 }
 
 const generateLinks = (balancedNodes) =>
@@ -749,7 +793,7 @@ const verifyNodeDetails = (nodeName,nodeValue,nodeFrequency,nodeStart,nodeEnd,is
     return valid;
 }
 
-const submitNewNode = (parentNodeId,type) =>
+const submitNewNode = (parentNodeId,type,isVariant) =>
 {
     const isGroup = type == "group";
     const nodeName = document.getElementById("add-node-name-input").value;
@@ -791,8 +835,9 @@ const submitNewNode = (parentNodeId,type) =>
             (
                 parentNodeId,
                 nodeName,
-                isGroup ? "group" : "income",
-                isGroup ? {} : nodeDetails
+                isGroup ? "group" : "inherit",
+                isGroup ? {} : nodeDetails,
+				isVariant
             );
         }
         removeNodeOverlay();

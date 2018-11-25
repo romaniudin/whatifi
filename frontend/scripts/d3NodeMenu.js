@@ -148,6 +148,16 @@ const generateNodeMenu_addGroupNode = (container,nodeId,offset=0) =>
     generateNodeMenuItem(container,"Add Group",`nodeOverlayAdd(\"${nodeId}\","group");nodeMenuCloseAll();`,offset);
 }
 
+const generateNodeMenu_addChildNode = (container,nodeId,offset=0) =>
+{
+    generateNodeMenuItem(container,"Add Child",`nodeOverlayAdd(\"${nodeId}\","default");nodeMenuCloseAll();`,offset);
+}
+
+const generateNodeMenu_addVariantNode = (container,nodeId,offset=0) =>
+{
+    generateNodeMenuItem(container,"Add Variant",`nodeOverlayAdd(\"${nodeId}\","default",true);nodeMenuCloseAll();`,offset);
+}
+
 const generateNodeMenu_addSubNode = (container,nodeId,offset=0) =>
 {
     generateNodeMenuItem(container,"Add Node",`nodeOverlayAdd(\"${nodeId}\","sub");nodeMenuCloseAll();`,offset);
@@ -181,6 +191,6 @@ const nodeMenuCloseAll = () =>
 const nodeMenuGenerator =
 {
     "me":[generateNodeMenu_traverseAll,generateNodeMenu_editDetails],
-    "group":[generateNodeMenu_compareChildren,generateNodeMenu_collapseChildren,generateNodeMenu_addGroupNode,generateNodeMenu_addSubNode,generateNodeMenu_editDetails,generateNodeMenu_removeNode],
-    "default":[generateNodeMenu_toggle,generateNodeMenu_traverse,generateNodeMenu_addSubNode,generateNodeMenu_editDetails,generateNodeMenu_removeNode],
+    "group":[generateNodeMenu_compareChildren,generateNodeMenu_collapseChildren,generateNodeMenu_addGroupNode,generateNodeMenu_addChildNode,generateNodeMenu_addVariantNode,generateNodeMenu_addSubNode,generateNodeMenu_editDetails,generateNodeMenu_removeNode],
+    "default":[generateNodeMenu_toggle,generateNodeMenu_traverse,generateNodeMenu_addChildNode,generateNodeMenu_addVariantNode,generateNodeMenu_addSubNode,generateNodeMenu_editDetails,generateNodeMenu_removeNode],
 }

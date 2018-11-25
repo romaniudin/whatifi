@@ -37,7 +37,7 @@ const isParent = (nodeId,possibleParentId) =>
     return false;
 }
 
-const addChild = (nodeId,parentNodeId,inherit=false,setInherit=false) =>
+const addChild = (nodeId,parentNodeId,isVariant=false) =>
 {
     if (isParent(nodeId,parentNodeId))
     {
@@ -49,66 +49,123 @@ const addChild = (nodeId,parentNodeId,inherit=false,setInherit=false) =>
         return toast("Parent node does not exist");
     }
 
+    if (orderedNodes.indexOf(nodeId) == -1) orderedNodes.push(nodeId);
+
     const node = nodes[nodeId];
     const parentNode = nodes[parentNodeId];
+    inheritNodes(node,parentNode,isVariant);
+}
 
-    parentNode["childrenNodes"].push(nodeId);
-    node["parentNodes"].push(parentNodeId);
-    node["level"] = parentNode["level"]+1;
-    node["minimized"] = parentNode["minimized"];
+const inheritNodes = (childNode,parentNode,isVariant=false) =>
+{
+    childNode.parentNodes.push(parentNode.nodeId);
+    childNode.level = parentNode.level+1;
 
-    if (orderedNodes.indexOf(nodeId) == -1) orderedNodes.push(nodeId);
-/*
-    const levelNodes = [];
-    for (const nodeId in nodes)
+    let childNodeLevel = parentNode.level+1;
+    if (childNode.type == "group")
     {
-        const currentNode = nodes[nodeId];
-        if (currentNode.level == node.level)
+        addNewGroupTo(childNode.nodeId,parentNode.nodeId);
+    }
+    else if (childNode.type != "group")
+    {
+        childNode.minimized = parentNode.minimized;
+
+        let onlyChildIsGroup = true;
+        parentNode.childrenNodes.map
+        (
+            childId =>
+            {
+                onlyChildIsGroup &= (nodes[childId].type == "group");
+            }
+        )
+
+        if (parentNode.type != "group") childNode["subType"] = "subNode";
+
+        if ((isVariant || parentNode.type == "group") && !onlyChildIsGroup)
         {
-            levelNodes.push(currentNode);
+            const toInherit = parentNode.childrenNodes;
+            parentNode.childrenNodes.push(childNode.nodeId);
+            childNode.parentNodes.push(parentNode.nodeId);
+
+            const allChildren = [];
+            toInherit.map
+            (
+                inheritId =>
+                {
+                    const inheritNode = nodes[inheritId];
+                    inheritNode.childrenNodes.map
+                    (
+                        inheritChildId =>
+                        {
+                            if (allChildren.indexOf(inheritChildId) == -1) allChildren.push(inheritChildId);
+                        }
+                    )
+                }
+            )
+            childNode.childrenNodes = allChildren;
+        }
+        else
+        {
+            const toInherit = parentNode.childrenNodes;
+            parentNode.childrenNodes = [childNode.nodeId];
+            childNode.childrenNodes = toInherit;
+
+            toInherit.map
+            (
+                inheritId =>
+                {
+                    const inheritNode = nodes[inheritId];
+                    const oldParent = inheritNode.parentNodes.indexOf(parentNode.nodeId);
+                    inheritNode.parentNodes.push(childNode.nodeId);
+                }
+            )
         }
     }
 
-    levelNodes.sort
-    (
-        (a,b) =>
-        {
-            if (a.level == b.level)
-            {
-                return 0;
-            }
+    childNode.level = childNodeLevel;
 
-            return a.level > b.level ? 1 : -1;
+    let groupInLevel = false;
+    Object.keys(nodes).map
+    (
+        nodeId =>
+        {
+            const node = nodes[nodeId];
+            if (node.level == childNodeLevel && node.type == "group") groupInLevel = true;
         }
     )
-
-    levelNodes.shift(node);
-    balanceLevel(levelNodes);*/
-
-    if (setInherit)
+    if (groupInLevel)
     {
-        parentNode["toInherit"] = nodeId;
+        shiftNodes(childNode.level-1,1,childNode.nodeId);
     }
-    if (inherit && parentNode.toInherit)
+}
+
+/*
+const inheritNodes = (childNode,parentNode,isVariant=false) =>
+{
+    let toInherit;
+    if (parentNode.type == "group")
     {
+        toInherit = parentNode.toInherit;
+        if (!toInherit) return;
+
         const inheritNode = nodes[parentNode.toInherit];
         const inheritIndex = parentNode["childrenNodes"].indexOf(parentNode["toInherit"]);
 
-        const oldParentIndex = inheritNode.parentNodes.indexOf(parentNodeId);
+        const oldParentIndex = inheritNode.parentNodes.indexOf(parentNode.nodeId);
         if (oldParentIndex != -1)
         {
             inheritNode.parentNodes.splice(oldParentIndex,1);
         }
 
-        node.childrenNodes.push(parentNode.toInherit);
-        inheritNode.parentNodes.push(nodeId);
+        childNode.childrenNodes.push(parentNode.toInherit);
+        inheritNode.parentNodes.push(childNode.nodeId);
 
         if (inheritIndex != -1)
         {
             parentNode["childrenNodes"].splice(inheritIndex,1);
         }
 
-        if (inheritNode.level == node.level)
+        if (inheritNode.level == childNode.level)
         {
             traverse
             (
@@ -120,8 +177,87 @@ const addChild = (nodeId,parentNodeId,inherit=false,setInherit=false) =>
                 }
             );
         }
+        childNode.type="income";
+
+        toInherit = [toInherit];
     }
+    else if
+    (
+        isVariant &&
+        parentNode.childrenNodes.length > 0 &&
+        nodes[parentNode.childrenNodes[0]].type != "group"
+    )
+    {
+        toInherit = nodes[parentNode.childrenNodes[0]].childrenNodes;
+
+        parentNode.childrenNodes.push(childNode.nodeId);
+        childNode.childrenNodes = toInherit;
+
+        toInherit.map
+        (
+            nodeId =>
+            {
+                const node = nodes[nodeId];
+                node.parentNodes.push(childNode.nodeId);
+            }
+        );
+    }
+    else
+    {
+        
+        const newNodeIndex = parentNode.childrenNodes.indexOf(childNode.nodeId);
+        parentNode.childrenNodes.splice(newNodeIndex,1);
+
+		toInherit = parentNode.childrenNodes;
+
+        parentNode.childrenNodes = [childNode.nodeId];
+        childNode.childrenNodes = toInherit;
+
+        toInherit.map
+        (
+            nodeId =>
+            {
+                const node = nodes[nodeId];
+				const parentIndex = node.parentNodes.indexOf(parentNode.nodeId)
+                node.parentNodes.splice(parentIndex,1);
+                node.parentNodes.push(childNode.nodeId);
+            }
+        );
+
+		shiftNodes(childNode.level-1,1,childNode.nodeId);
+    }
+
+    let maxParentLevel;
+    const allParents = [];
+
+    toInherit.map
+    (
+        inheritId =>
+        {
+            nodes[inheritId].parentNodes.map
+            (
+                nodeId =>
+                {
+                    const node = nodes[nodeId];
+                    if (maxParentLevel == null || node.level > maxParentLevel) maxParentLevel = node.level;
+                    if (allParents.indexOf(nodeId) == -1) allParents.push(nodeId);
+                }
+            )
+        }
+    )
+
+//
+//    allParents.map
+//    (
+//        nodeId =>
+//        {
+//            const node = nodes[nodeId];
+//            node.level = maxParentLevel;
+//        }
+//    )
+//
 }
+*/
 
 const addNode = (nodeName,nodeType,nodeDetails) =>
 {
@@ -174,25 +310,25 @@ const addNewGroupTo = (nodeId,parentNodeId) =>
     node.toInherit = parentNode.toInherit;
     parentNode.toInherit = node.nodeId;
     let nodeLevel = (parentNode.level+1);
+    let allChildren = parentNode.childrenNodes;
 
     if (parentNode.childrenNodes.length > 0)
     {
-        nodeLevel += (parentNode.childrenNodes.length > 0);
-        parentNode.childrenNodes.map
-        (
-            childrenNodeId =>
-            {
-                const childNode = nodes[childrenNodeId];
-                childNode.childrenNodes.push(node.nodeId);
-
-                const index = childNode.childrenNodes.indexOf(node.toInherit);
-                if (node.toInherit && index != -1)
+        let containsGroup = false;
+        while (allChildren.length > 0 && !containsGroup)
+        {
+            let nextChildren = [];
+            allChildren.map
+            (
+                childNodeId =>
                 {
-                    childNode.childrenNodes.splice(index,1);
-                    node.parentNodes.push(childrenNodeId);
+                    const childNode = nodes[childNodeId];
+                    if (childNode.level > nodeLevel) nodeLevel = childNode.level;
+                    if (childNode.childrenNodes.length > 0) nextChildren = nextChildren.concat(childNode.childrenNodes);
+                    containsGroup |= (childNode.type == "group");
                 }
-            }
-        );
+            );
+        }
     }
     else
     {
@@ -243,35 +379,57 @@ const removeSubNodeFrom = (nodeId,nodeName) =>
     delete(node["subNodes"][nodeName]);
     generateSubNodeDisplay();
 }
-const addNewNodeTo = (parentId,nodeName,type,nodeDetails) =>
+const addNewNodeTo = (parentId,nodeName,type,nodeDetails,isVariant=false) =>
 {
-    const node = addNode(nodeName,type,nodeDetails);
-    const isGroup = type == "group";
     const parentNode = nodes[parentId];
-
-    if (isGroup && parentNode.type != "me")
-    {
-        addNewGroupTo(node,parentId);
-    }
-    else
-    {
-        addChild(node,parentId,!isGroup,isGroup);
-    }
+    const nodeId = addNode(nodeName,type == "inherit" ? "income" : type,nodeDetails);
+    const isGroup = type == "group";
+    addChild(nodeId,parentId,isVariant);
 
     render(false);
-    return node;
+    return nodeId;
 }
 
-const shiftNodes = (level,shift) =>
+const shiftNodes = (level,shift,skipNodeId=null) =>
 {
     orderedNodes.map
     (
         nodeId =>
         {
+			if (nodeId == skipNodeId) return;
             const childNode = nodes[nodeId];
             childNode.level += childNode.level > level ? shift : 0;
         }
     )
+}
+
+const shiftNodeTree = (nodesToShift=[],shift=1,skipShift=null) =>
+{
+    while (nodesToShift.length > 0)
+    {
+        let containsGroup = false;
+        nodesToShift.map
+        (
+            toShift =>
+            {
+                const nodeToShift = nodes[toShift];
+                containsGroup |= nodeToShift.type == "group";
+            }
+        );
+        if (containsGroup) break;
+
+        let nextNodes = [];
+        nodesToShift.map
+        (
+            toShift =>
+            {
+                const nodeToShift = nodes[toShift];
+                nextNodes.concat(nodeToShift.childrenNodes);
+                nodeToShift.level += shift;
+            }
+        );
+        nodesToShift = nextNodes;
+    }
 }
 
 const removeChildren = (nodeId) =>
@@ -354,6 +512,19 @@ const removeNode = (nodeId) =>
             {
                 childNode.parentNodes = node.parentNodes;
             }
+			else
+			{
+				node.parentNodes.map
+				(
+					parentNodeId =>
+					{
+						if (childNode.parentNodes.indexOf(parentNodeId) == -1)
+						{
+							childNode.parentNodes.push(parentNodeId);
+						}
+					}
+				);
+			}
         }
     );
 
