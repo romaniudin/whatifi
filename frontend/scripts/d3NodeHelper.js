@@ -183,23 +183,25 @@ const compareNodeLevels = (a,b) =>
 
 const balanceLevel = (allNodes) =>
 {
+	// TODO: middle node offset balance
     const levelLength = allNodes.length;
-    let start = levelLength % 2 == 1 ? parseInt(levelLength/2)*nodeDistance : (levelLength/2-1)*nodeDistance+nodeDistance/2;
+    let start = levelLength % 2 == 1 ? parseInt(levelLength/2)*nodeDistance : (levelLength-1)/2*nodeDistance;
 
 	let currentPlacement = 0;
-	let totalOffset = 0;
 	let isSubNode = false;
     allNodes.map
     (
         (node,i) =>
         {
 			const childrenCount = node.childrenNodes.length;
-			const offsetMultiplier = (i == 0 || i == levelLength - 1) ? 0.5 : 1;
-			const nodeOffset = (childrenCount > 0 ? childrenCount  - 1 : 0) * offsetMultiplier * nodeDistance;
 
 			if (node.subType != "subNode")
 			{
-				node.x = currentPlacement;
+				const nodeOffset = (childrenCount % 2 == 1) ? parseInt(childrenCount/2)*nodeDistance : (childrenCount-1)/2*nodeDistance;
+
+				currentPlacement += nodeOffset;
+				node.x = levelLength == 1 ? 0 : currentPlacement;
+				currentPlacement += nodeOffset + nodeDistance;
 			}
 			else
 			{
@@ -210,11 +212,6 @@ const balanceLevel = (allNodes) =>
 
 				node.x = placement;
 			}
-	
-			currentPlacement += nodeOffset + nodeDistance;
-			totalOffset += nodeOffset + (i < levelLength-1) ? nodeDistance : 0;
-
-			console.log(node.nodeId,totalOffset);
         }
     );
 
@@ -226,7 +223,7 @@ const balanceLevel = (allNodes) =>
 			{
 				if (node.subType != "subNode")
 				{
-					node.x -= totalOffset/2
+					node.x -= (levelLength)*nodeDistance/2;
 				}
 			}
 		)

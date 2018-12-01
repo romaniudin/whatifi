@@ -215,7 +215,6 @@ const nodeOverlayAdd = (nodeId,type,isVariant=false) =>
             "click",
             () =>
             {
-                console.log(type);
                 submitNewNode(nodeId,type,isVariant);
             }
         );

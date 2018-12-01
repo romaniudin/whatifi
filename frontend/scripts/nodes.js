@@ -87,22 +87,29 @@ const inheritNodes = (childNode,parentNode,isVariant=false) =>
             parentNode.childrenNodes.push(childNode.nodeId);
             childNode.parentNodes.push(parentNode.nodeId);
 
-            const allChildren = [];
-            toInherit.map
-            (
-                inheritId =>
-                {
-                    const inheritNode = nodes[inheritId];
-                    inheritNode.childrenNodes.map
-                    (
-                        inheritChildId =>
-                        {
-                            if (allChildren.indexOf(inheritChildId) == -1) allChildren.push(inheritChildId);
-                        }
-                    )
-                }
-            )
-            childNode.childrenNodes = allChildren;
+            if (parentNode.type == "group")
+            {
+                childNode.childrenNodes = [parentNode.toInherit];
+            }
+            else
+            {
+                const allChildren = [];
+                toInherit.map
+                (
+                    inheritId =>
+                    {
+                        const inheritNode = nodes[inheritId];
+                        inheritNode.childrenNodes.map
+                        (
+                            inheritChildId =>
+                            {
+                                if (allChildren.indexOf(inheritChildId) == -1) allChildren.push(inheritChildId);
+                            }
+                        )
+                    }
+                )
+                childNode.childrenNodes = allChildren;
+            }
         }
         else
         {
@@ -379,6 +386,7 @@ const removeSubNodeFrom = (nodeId,nodeName) =>
     delete(node["subNodes"][nodeName]);
     generateSubNodeDisplay();
 }
+
 const addNewNodeTo = (parentId,nodeName,type,nodeDetails,isVariant=false) =>
 {
     const parentNode = nodes[parentId];
