@@ -942,15 +942,18 @@ const reverseTraverse = (nodeId,traversedNodes,showGraph=true,fastTraverse=false
 
 const startForwardTraverse = (nodeId) =>
 {
-    const node = nodes[nodeId];
-    if ( node.type != "me" ) return;
+    let options = [[nodeId]];
+    let traverse;
+    do
+    {
+        traverse = forwardTraverse(options);
+        options = traverse.result; 
+    }
+    while (traverse.continue)
 
-    const forwardTraverseNodes = [[nodeId]];
-    forwardTraverse(nodeId,forwardTraverseNodes);
-    const allOptions = joinForwardTraverse(forwardTraverseNodes);
     const allFinances = [];
     let count = 0;
-    allOptions.map
+    options.map
     (
         (option,i) =>
         {
@@ -959,52 +962,29 @@ const startForwardTraverse = (nodeId) =>
         }
     );
     currentScenario = allFinances;
+    console.log(allFinances);
     renderGraph(allFinances);
 }
 
-const forwardTraverse = (nodeId,traversedNodes,currentLevel=0) =>
+const forwardTraverse = (currentOptions) =>
 {
-    const node = nodes[nodeId];
-    if (traversedNodes.length <= currentLevel+1) {traversedNodes.push([])}
-
-    node.childrenNodes.map
+    const nextOptions = [];
+    currentOptions.map
     (
-        (childNode) =>
+        option =>
         {
-            if (traversedNodes[currentLevel+1].indexOf(childNode) == -1)
-            {
-                traversedNodes[currentLevel+1].push(childNode);
-            }
+            const latestNodeId = option[option.length-1];
+            const node = nodes[latestNodeId];
+
+            node.childrenNodes.map
+            (
+                childNodeId =>
+                {
+                    nextOptions.push(option.concat([childNodeId]));
+                }
+            )
         }
     )
 
-    traversedNodes[currentLevel+1].map
-    (
-        nodeId => forwardTraverse(nodeId,traversedNodes,currentLevel+1)
-    );
-}
-
-const joinForwardTraverse = (forwardTraverse) =>
-{
-    let currentLevel = [forwardTraverse[0]];
-    for (let i = 1; i < forwardTraverse.length-1; i++)
-    {
-        currentLevel = joinNextLevel(currentLevel,forwardTraverse[i]);
-    }
-    return currentLevel;
-}
-
-const joinNextLevel = (traverse,nextLevel) =>
-{
-    const allJoins = [];
-    for (const j in nextLevel)
-    {
-        for (const i in traverse)
-        {
-            const option = traverse[i].slice();
-            option.push(nextLevel[j]);
-            allJoins.push(option);
-        }
-    }
-    return allJoins.length > 0 ? allJoins : traverse;
+    return nextOptions.length == 0 ? {"continue":false,"result":currentOptions} : {"continue":true,"result":nextOptions};
 }
