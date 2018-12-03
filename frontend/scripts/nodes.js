@@ -83,7 +83,7 @@ const inheritNodes = (childNode,parentNode,isVariant=false) =>
 
         if (parentNode.type != "group") childNode["subType"] = "subNode";
 
-        if ((isVariant || parentNode.type == "group") && !onlyChildIsGroup)
+        if ((parentNode.childrenNodes.length > 0 || parentNode.type == "group") && !onlyChildIsGroup)
         {
             const toInherit = parentNode.childrenNodes;
             parentNode.childrenNodes.push(childNode.nodeId);
@@ -95,6 +95,8 @@ const inheritNodes = (childNode,parentNode,isVariant=false) =>
             }
             else
             {
+                childNode.childrenNodes = [childNode.toInherit];
+/*
                 const allChildren = [];
                 toInherit.map
                 (
@@ -111,13 +113,15 @@ const inheritNodes = (childNode,parentNode,isVariant=false) =>
                     }
                 )
                 childNode.childrenNodes = allChildren;
+*/
             }
         }
         else
         {
-            const toInherit = parentNode.childrenNodes;
+            const toInherit = parentNode.childrenNodes.concat([]);
             parentNode.childrenNodes = [childNode.nodeId];
             childNode.childrenNodes = toInherit;
+            console.log(`${childNode.nodeId} inheriting:`,toInherit);
 
             toInherit.map
             (
