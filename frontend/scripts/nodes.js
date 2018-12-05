@@ -63,12 +63,12 @@ const inheritNodes = (childNode,parentNode,isVariant=false) =>
     childNode.level = parentNode.level+1;
 
     let childNodeLevel = parentNode.level+1;
-    if (childNode.type == "group")
+    if (childNode.subtype == "group")
     {
         console.log("\t".repeat(parentNode.level),`adding ${childNode.nodeId} to ${parentNode.nodeId}`);
         addNewGroupTo(childNode.nodeId,parentNode.nodeId);
     }
-    else if (childNode.type != "group")
+    else if (childNode.subtype != "group")
     {
         console.log("\t".repeat(parentNode.level),`adding ${childNode.nodeId} to ${parentNode.nodeId}`);
         childNode.minimized = parentNode.minimized;
@@ -78,11 +78,11 @@ const inheritNodes = (childNode,parentNode,isVariant=false) =>
         (
             childId =>
             {
-                onlyChildIsGroup &= (nodes[childId].type == "group");
+                onlyChildIsGroup &= (nodes[childId].subtype == "group");
             }
         )
 
-        if (parentNode.type != "group") childNode["subType"] = "subNode";
+        if (parentNode.subtype != "group") childNode.subtype = "subNode";
 
         let toInherit;
         if (onlyChildIsGroup)
@@ -122,7 +122,7 @@ const inheritNodes = (childNode,parentNode,isVariant=false) =>
         nodeId =>
         {
             const node = nodes[nodeId];
-            if (node.level == childNodeLevel && node.type == "group") groupInLevel = true;
+            if (node.level == childNodeLevel && node.subtype == "group") groupInLevel = true;
         }
     )
     if (groupInLevel)
@@ -131,7 +131,7 @@ const inheritNodes = (childNode,parentNode,isVariant=false) =>
     }
 }
 
-const addNode = (nodeName,nodeType,nodeDetails) =>
+const addNode = (nodeName,nodeType,nodeSubtype,nodeDetails) =>
 {
     if (!nodeTypes.includes(nodeType))
     {
@@ -160,6 +160,7 @@ const addNode = (nodeName,nodeType,nodeDetails) =>
         "expanded":false,
         "toInherit":null,
         "type":nodeType,
+        "subtype":nodeSubtype,
     };
 
     for (let key in nodeDetails)
@@ -197,7 +198,7 @@ const addNewGroupTo = (nodeId,parentNodeId) =>
                     const childNode = nodes[childNodeId];
                     if (childNode.level > nodeLevel) nodeLevel = childNode.level;
                     if (childNode.childrenNodes.length > 0) nextChildren = nextChildren.concat(childNode.childrenNodes);
-                    containsGroup |= (childNode.type == "group");
+                    containsGroup |= (childNode.subtype == "group");
                 }
             );
         }
@@ -252,11 +253,11 @@ const removeSubNodeFrom = (nodeId,nodeName) =>
     generateSubNodeDisplay();
 }
 
-const addNewNodeTo = (parentId,nodeName,type,nodeDetails,isVariant=false) =>
+const addNewNodeTo = (parentId,nodeName,nodeType,nodeSubtype,nodeDetails,isVariant=false) =>
 {
     const parentNode = nodes[parentId];
-    const nodeId = addNode(nodeName,type == "inherit" ? "income" : type,nodeDetails);
-    const isGroup = type == "group";
+    const nodeId = addNode(nodeName,nodeType == "inherit" ? parentNode.type : nodeType,nodeSubtype,nodeDetails);
+    const isGroup = nodeType == "group";
     addChild(nodeId,parentId,isVariant);
 
     render(false);
@@ -286,7 +287,7 @@ const shiftNodeTree = (nodesToShift=[],shift=1,skipShift=null) =>
             toShift =>
             {
                 const nodeToShift = nodes[toShift];
-                containsGroup |= nodeToShift.type == "group";
+                containsGroup |= nodeToShift.subtype == "group";
             }
         );
         if (containsGroup) break;
@@ -312,7 +313,7 @@ const removeTree = (rootNodeId) =>
         [[rootNodeId]],
         nodeId =>
         {
-            return nodes[nodeId].type != "group"
+            return nodes[nodeId].subtype != "group"
         }
     );
 
@@ -348,7 +349,7 @@ const removeChildren = (allNodes) =>
         childNodeId =>
         {
             const childNode = nodes[childNodeId];
-            if (childNode.type != "group") removeNode(childNodeId);
+            if (childNode.subtype != "group") removeNode(childNodeId);
         }
     );
 }
@@ -358,7 +359,7 @@ const removeNode = (nodeId) =>
     const node = nodes[nodeId];
     console.log(nodeId);
 
-    if (node.type == "group")
+    if (node.subtype == "group")
     {
         node.parentNodes.map
         (
@@ -656,7 +657,7 @@ const compareChildNodes = (nodeId) =>
     const finances = [];
     const node = nodes[nodeId];
 
-    if (node.childrenNodes.length == 1 && nodes[node.childrenNodes[0]].type == "group")
+    if (node.childrenNodes.length == 1 && nodes[node.childrenNodes[0]].subtype == "group")
     {
         flashNode(nodeId);
         return toast("Please add at least one node");
@@ -704,7 +705,7 @@ const collapseChildNodes = (nodeId) =>
         (childNodeId) =>
         {
             childSelected |= nodes[childNodeId].selected;
-            isOnlyChildAGroup &= nodes[childNodeId].type == "group";
+            isOnlyChildAGroup &= nodes[childNodeId].subtype == "group";
             if (nodes[childNodeId].selected) childIdSelected = childNodeId;
         }
     );
@@ -777,9 +778,9 @@ const reverseTraverse = (nodeId,traversedNodes,showGraph=true,fastTraverse=false
     traversedNodes.push(nodeId);
     if
     (
-        node.type == "group" && 
+        node.subtype == "group" && 
         (
-            (node.childrenNodes.length == 1 && nodes[node.childrenNodes[0]].type == "group") || 
+            (node.childrenNodes.length == 1 && nodes[node.childrenNodes[0]].subtype == "group") || 
             node.childrenNodes.length == 0
         )
     )

@@ -29,20 +29,20 @@ const imageBackgroundScheme =
 
 const nodeBorderColour = (node) =>
 {
-    return (node.selected ? "slategrey"  : borderScheme[node.type]) || borderScheme["default"];
+    return (node.selected ? "slategrey"  : borderScheme[node.subtype]) || borderScheme["default"];
 }
 
 const nodeImageBorderColour = (node) =>
 {
-    return imageBorderScheme[node.type] || imageBorderScheme["default"];
+    return imageBorderScheme[node.subtype] || imageBorderScheme["default"];
 }
 
 const nodeBackgroundColour = (node) =>
 {
-    return backgroundScheme[node.type] || backgroundScheme["default"];
+    return backgroundScheme[node.subtype] || backgroundScheme["default"];
 }
 
 const nodeImageBackgroundColour = (node) =>
 {
-    return imageBackgroundScheme[node.type] || imageBackgroundScheme["default"];
+    return imageBackgroundScheme[node.subtype] || imageBackgroundScheme["default"];
 }
