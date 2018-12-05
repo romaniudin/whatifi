@@ -191,6 +191,6 @@ const nodeMenuCloseAll = () =>
 const nodeMenuGenerator =
 {
     "me":[generateNodeMenu_traverseAll,generateNodeMenu_editDetails],
-    "group":[generateNodeMenu_compareChildren,generateNodeMenu_collapseChildren,generateNodeMenu_addGroupNode,/*generateNodeMenu_addChildNode*/,generateNodeMenu_addVariantNode/*,generateNodeMenu_addSubNode*/,generateNodeMenu_editDetails,generateNodeMenu_removeNode],
+    "group":[generateNodeMenu_compareChildren,generateNodeMenu_collapseChildren,generateNodeMenu_addGroupNode/*,generateNodeMenu_addChildNode*/,generateNodeMenu_addVariantNode/*,generateNodeMenu_addSubNode*/,generateNodeMenu_editDetails,generateNodeMenu_removeNode],
     "default":[generateNodeMenu_toggle,generateNodeMenu_traverse/*,generateNodeMenu_addChildNode*/,generateNodeMenu_addVariantNode/*,generateNodeMenu_addSubNode*/,generateNodeMenu_editDetails,generateNodeMenu_removeNode],
 }

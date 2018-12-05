@@ -65,11 +65,12 @@ const inheritNodes = (childNode,parentNode,isVariant=false) =>
     let childNodeLevel = parentNode.level+1;
     if (childNode.type == "group")
     {
-        console.log("adding group");
+        console.log("\t".repeat(parentNode.level),`adding ${childNode.nodeId} to ${parentNode.nodeId}`);
         addNewGroupTo(childNode.nodeId,parentNode.nodeId);
     }
     else if (childNode.type != "group")
     {
+        console.log("\t".repeat(parentNode.level),`adding ${childNode.nodeId} to ${parentNode.nodeId}`);
         childNode.minimized = parentNode.minimized;
 
         let onlyChildIsGroup = true;
@@ -83,56 +84,34 @@ const inheritNodes = (childNode,parentNode,isVariant=false) =>
 
         if (parentNode.type != "group") childNode["subType"] = "subNode";
 
-        if ((parentNode.childrenNodes.length > 0 || parentNode.type == "group") && !onlyChildIsGroup)
+        let toInherit;
+        if (onlyChildIsGroup)
         {
-            const toInherit = parentNode.childrenNodes;
-            parentNode.childrenNodes.push(childNode.nodeId);
-            if (childNode.parentNodes.indexOf(parentNode.nodeId) == -1) childNode.parentNodes.push(parentNode.nodeId);
-
-            if (parentNode.type == "group")
-            {
-                childNode.childrenNodes = [parentNode.toInherit];
-            }
-            else
-            {
-                childNode.childrenNodes = [childNode.toInherit];
-/*
-                const allChildren = [];
-                toInherit.map
-                (
-                    inheritId =>
-                    {
-                        const inheritNode = nodes[inheritId];
-                        inheritNode.childrenNodes.map
-                        (
-                            inheritChildId =>
-                            {
-                                if (allChildren.indexOf(inheritChildId) == -1) allChildren.push(inheritChildId);
-                            }
-                        )
-                    }
-                )
-                childNode.childrenNodes = allChildren;
-*/
-            }
+            toInherit = parentNode.childrenNodes.concat([]);
+            parentNode.childrenNodes = [childNode.nodeId];
         }
         else
         {
-            const toInherit = parentNode.childrenNodes.concat([]);
-            parentNode.childrenNodes = [childNode.nodeId];
-            childNode.childrenNodes = toInherit;
-            console.log(`${childNode.nodeId} inheriting:`,toInherit);
-
-            toInherit.map
-            (
-                inheritId =>
-                {
-                    const inheritNode = nodes[inheritId];
-                    const oldParent = inheritNode.parentNodes.indexOf(parentNode.nodeId);
-                    if (inheritNode.parentNodes.indexOf(childNode.nodeId) == -1) inheritNode.parentNodes.push(childNode.nodeId);
-                }
-            )
+            toInherit = [parentNode.toInherit];
+            parentNode.childrenNodes.push(childNode.nodeId);
         }
+
+        childNode.childrenNodes = toInherit;
+        toInherit.map
+        (
+            inheritId =>
+            {
+                const node = nodes[inheritId];
+
+                if (onlyChildIsGroup)
+                {
+                    const index = node.parentNodes.indexOf(parentNode.nodeId);
+                    node.parentNodes.splice(index,1);
+                }
+
+                node.parentNodes.push(childNode.nodeId);
+            }
+        );
     }
 
     childNode.level = childNodeLevel;
@@ -883,8 +862,9 @@ const obtainPaths = (startingNodes,isValid=null) =>
     return options;
 }
 
-const forwardTraverse = (currentOptions,isValid=(nodeId)=>{return true}) =>
+const forwardTraverse = (currentOptions,isValid=null) =>
 {
+    isValid = isValid == null ? (nodeId)=>{return true} : isValid;
     const nextOptions = [];
     let shouldContinue = true;
     currentOptions.map
