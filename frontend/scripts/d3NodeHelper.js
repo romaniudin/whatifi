@@ -19,7 +19,7 @@ const tooltipTransitionDelay = 200;
 const layerPriority = {"default":0,"group":1,"selected":2}
 const obtainNodeLayer = (node) =>
 {
-    if (node.type == "group")
+    if (node.subtype == "group")
     {
         return layerPriority["group"];
     }
@@ -47,9 +47,16 @@ const render = (newCanvas=true,delaySubnode=false) =>
     (
         node =>
         {
-            balanceNodes(balancedNodes,node)
+            bucketNodes(balancedNodes,node)
         }
     );
+	balancedNodes.map
+	(
+		level =>
+		{
+			balanceLevel(level)
+		}
+	)
 
     const range = d3.extent(allNodes,(node) => node.x);
     const shift = range[1] - range[0];
@@ -176,20 +183,54 @@ const compareNodeLevels = (a,b) =>
 
 const balanceLevel = (allNodes) =>
 {
+	// TODO: middle node offset balance
     const levelLength = allNodes.length;
-    let start = levelLength % 2 == 1 ? parseInt(levelLength/2)*nodeDistance : (levelLength/2-1)*nodeDistance+nodeDistance/2;
+    let start = levelLength % 2 == 1 ? parseInt(levelLength/2)*nodeDistance : (levelLength-1)/2*nodeDistance;
 
+	let currentPlacement = 0;
+	let isSubNode = false;
     allNodes.map
     (
-        (node) =>
+        (node,i) =>
         {
-            node.x = start;
-            start -= nodeDistance;
+			const childrenCount = node.childrenNodes.length;
+
+			if (node.subtype != "subNode")
+			{
+				const nodeOffset = (childrenCount % 2 == 1) ? parseInt(childrenCount/2)*nodeDistance : (childrenCount-1)/2*nodeDistance;
+
+				currentPlacement += nodeOffset;
+				node.x = levelLength == 1 ? 0 : currentPlacement;
+				currentPlacement += nodeOffset + nodeDistance;
+			}
+			else
+			{
+				const parentNode = nodes[node.parentNodes[0]];
+				const sibilings = parentNode.childrenNodes.length;
+				const childIndex = parentNode.childrenNodes.indexOf(node.nodeId);
+				const placement = parentNode.x - childIndex*nodeDistance +((sibilings % 2 == 1) ? parseInt(sibilings/2)*nodeDistance : (sibilings/2-1)*nodeDistance+nodeDistance/2);
+
+				node.x = placement;
+			}
         }
     );
+
+	if (levelLength > 1)
+	{
+		allNodes.map
+		(
+			node =>
+			{
+				if (node.subtype != "subNode")
+				{
+					node.x -= (levelLength)*nodeDistance/2;
+				}
+			}
+		)
+	}
 }
 
-const balanceNodes = (allNodes,node) =>
+const bucketNodes = (allNodes,node) =>
 {
     while(!(allNodes.length > node.level))
     {
@@ -198,7 +239,7 @@ const balanceNodes = (allNodes,node) =>
 
     allNodes[node.level].push(node);
 
-    balanceLevel(allNodes[node.level]);
+    //balanceLevel(allNodes[node.level]);
 }
 
 const generateLinks = (balancedNodes) =>
@@ -289,11 +330,11 @@ const onContextMenu = (nodeId) =>
 {
     nodeMenuCloseAll();
     const node = nodes[nodeId];
-    if (node.type == "group")
+    if (node.subtype == "group")
     {
         nodeOverlayDetails(node.nodeId);
     }
-    else if (node.type == "me")
+    else if (node.subtype == "me")
     {
         nodeOverlayPersonalDetails(node.nodeId);
     }
@@ -322,7 +363,7 @@ const obtainNodeXCoordinate = (node,offset=0) =>
 
 const obtainNodeYCoordinate = (node,offset=0) =>
 {
-    if (node.minimized && node.type != "group")
+    if (node.minimized && node.subtype != "group")
     {
         const parentNode = nodes[node.parentNodes[0]];
         const placement = parentNode.x+offset;
@@ -383,8 +424,8 @@ const shouldDisplaySubElement = (nodeId) =>
     const node = nodes[nodeId];
     return  Object.keys(node.subNodes).length > 0 &&
             (
-                (node.type != "group" && !node.expanded && (node.selected || !node.minimized)) || 
-                (node.type == "group" && !node.expanded && !node.minimized)
+                (node.subtype != "group" && !node.expanded && (node.selected || !node.minimized)) || 
+                (node.subtype == "group" && !node.expanded && !node.minimized)
             );
 }
 
@@ -495,14 +536,14 @@ const createNodeAddElements = (node) =>
 {
     const addNode = node.append("g")
         .attr("class","add-child-element")
-        .attr("onclick",(d) => {if (d.type=="group") return `nodeOverlayAdd("${d.nodeId}","default")`;else return ""})
+        .attr("onclick",(d) => {if (d.subtype=="group") return `nodeOverlayAdd("${d.nodeId}","default")`;else return ""})
 
     addNode.append("circle")
         .attr("class","add-node-shadow")
         .attr("fill","black")
         .attr("r",0)
         .attr("stroke-width",0)
-        .attr("opacity",(d)=>{if (d.type=="group") return 0.25;else return 0;})
+        .attr("opacity",(d)=>{if (d.subtype=="group") return 0.25;else return 0;})
         .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeDistance/2+1)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,1)});
 
@@ -520,7 +561,7 @@ const createNodeAddElements = (node) =>
         .attr("fill","white")
         .attr("stroke","white")
         .attr("stroke-width",2)
-        .attr("opacity",(d)=>{if (d.type=="group") return 1;else return 0;})
+        .attr("opacity",(d)=>{if (d.subtype=="group") return 1;else return 0;})
         .attr("x",d=>{return obtainNodeXCoordinate(d,nodeDistance/2-plusThickness/2)})
         .attr("y",d=>{return obtainNodeYCoordinate(d,-plusHeight/2)});
 
@@ -529,7 +570,7 @@ const createNodeAddElements = (node) =>
         .attr("fill","white")
         .attr("stroke","white")
         .attr("stroke-width",2)
-        .attr("opacity",(d)=>{if (d.type=="group") return 1;else return 0;})
+        .attr("opacity",(d)=>{if (d.subtype=="group") return 1;else return 0;})
         .attr("x",d=>{return obtainNodeXCoordinate(d,nodeDistance/2-plusHeight/2)})
         .attr("y",d=>{return obtainNodeYCoordinate(d,-plusThickness/2)});
 
@@ -546,33 +587,33 @@ const positionNodeAddElements = () =>
 {
     d3.selectAll(".add-node-shadow")
         .transition()
-        .attr("r",d => d.type == "group" ? 8 : 0)
+        .attr("r",d => d.subtype == "group" ? 8 : 0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeDistance/2+1)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,1)});
 
     d3.selectAll(".add-child-plus-circle")
         .transition()
-        .attr("r",d => d.type == "group" ? 8 : 0)
+        .attr("r",d => d.subtype == "group" ? 8 : 0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeDistance/2)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,0)});
 
     d3.selectAll(".add-child-plus-1")
         .transition()
-        .attr("width",d => d.type == "group" ? plusThickness : 0)
-        .attr("height",d => d.type == "group" ? plusHeight : 0)
+        .attr("width",d => d.subtype == "group" ? plusThickness : 0)
+        .attr("height",d => d.subtype == "group" ? plusHeight : 0)
         .attr("x",d=>{return obtainNodeXCoordinate(d,nodeDistance/2-plusThickness/2)})
         .attr("y",d=>{return obtainNodeYCoordinate(d,-plusHeight/2)});
 
     d3.selectAll(".add-child-plus-2")
         .transition()
-        .attr("width",d => d.type == "group" ? plusHeight : 0)
-        .attr("height",d => d.type == "group" ? plusThickness : 0)
+        .attr("width",d => d.subtype == "group" ? plusHeight : 0)
+        .attr("height",d => d.subtype == "group" ? plusThickness : 0)
         .attr("x",d=>{return obtainNodeXCoordinate(d,nodeDistance/2-plusHeight/2)})
         .attr("y",d=>{return obtainNodeYCoordinate(d,-plusThickness/2)});
 
     d3.selectAll(".add-node")
         .transition()
-        .attr("r",d => d.type == "group" ? 8 : 0)
+        .attr("r",d => d.subtype == "group" ? 8 : 0)
         .attr("fill","white")
         .attr("cx",d=>{return obtainNodeXCoordinate(d,nodeDistance/2)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,0)});
@@ -582,7 +623,7 @@ const createNodeExpandElements = (node) =>
 {
     const expandGroup = node.append("g")
         .attr("class","expand-group-element")
-        .attr("onclick",(d) => {if (d.type=="group") return `collapseChildNodes("${d.nodeId}")`;else return ""});
+        .attr("onclick",(d) => {if (d.subtype=="group") return `collapseChildNodes("${d.nodeId}")`;else return ""});
 
     expandGroup.append("circle")
         .attr("class","expand-group-element-shadow")
@@ -631,32 +672,32 @@ const positionNodeExpandElements = (node) =>
 {
     d3.selectAll(".expand-group-element-shadow")
         .transition()
-        .attr("r",d => d.type == "group" ? 17 : 0)
+        .attr("r",d => d.subtype == "group" ? 17 : 0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,52)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,52)});
 
     d3.selectAll(".expand-group-ellipsis")
         .transition()
         .attr("stroke-width",3)
-        .attr("r",d => d.type == "group" ? subNodeRadius : 0)
+        .attr("r",d => d.subtype == "group" ? subNodeRadius : 0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,50)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,50)});
 
     d3.selectAll(".expand-group-ellipsis-0")
         .transition()
-        .attr("r",d => d.type == "group" ? 2 : 0)
+        .attr("r",d => d.subtype == "group" ? 2 : 0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d, d.minimized ? 50 : 56)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d, d.minimized ? 56 : 50)});
 
     d3.selectAll(".expand-group-ellipsis-1")
         .transition()
-        .attr("r",d => d.type == "group" ? 2 : 0)
+        .attr("r",d => d.subtype == "group" ? 2 : 0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d,50)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d,50)});
 
     d3.selectAll(".expand-group-ellipsis-2")
         .transition()
-        .attr("r",d => d.type == "group" ? 2 : 0)
+        .attr("r",d => d.subtype == "group" ? 2 : 0)
         .attr("cx",d=>{return obtainNodeXCoordinate(d, d.minimized ? 50 : 44)})
         .attr("cy",d=>{return obtainNodeYCoordinate(d, d.minimized ? 44 : 50)});
 }
@@ -749,7 +790,7 @@ const verifyNodeDetails = (nodeName,nodeValue,nodeFrequency,nodeStart,nodeEnd,is
     return valid;
 }
 
-const submitNewNode = (parentNodeId,type) =>
+const submitNewNode = (parentNodeId,type,isVariant) =>
 {
     const isGroup = type == "group";
     const nodeName = document.getElementById("add-node-name-input").value;
@@ -791,8 +832,10 @@ const submitNewNode = (parentNodeId,type) =>
             (
                 parentNodeId,
                 nodeName,
-                isGroup ? "group" : "income",
-                isGroup ? {} : nodeDetails
+                isGroup ? "income" : "inherit",
+                isGroup ? "group" : "subnode",
+                isGroup ? {} : nodeDetails,
+				isVariant
             );
         }
         removeNodeOverlay();

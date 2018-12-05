@@ -37,7 +37,7 @@ const isParent = (nodeId,possibleParentId) =>
     return false;
 }
 
-const addChild = (nodeId,parentNodeId,inherit=false,setInherit=false) =>
+const addChild = (nodeId,parentNodeId,isVariant=false) =>
 {
     if (isParent(nodeId,parentNodeId))
     {
@@ -49,81 +49,89 @@ const addChild = (nodeId,parentNodeId,inherit=false,setInherit=false) =>
         return toast("Parent node does not exist");
     }
 
+    if (orderedNodes.indexOf(nodeId) == -1) orderedNodes.push(nodeId);
+
     const node = nodes[nodeId];
     const parentNode = nodes[parentNodeId];
+    inheritNodes(node,parentNode,isVariant);
+}
 
-    parentNode["childrenNodes"].push(nodeId);
-    node["parentNodes"].push(parentNodeId);
-    node["level"] = parentNode["level"]+1;
-    node["minimized"] = parentNode["minimized"];
+const inheritNodes = (childNode,parentNode,isVariant=false) =>
+{
+    if (!childNode.toInherit) childNode.toInherit = parentNode.toInherit;
+    if (childNode.parentNodes.indexOf(parentNode.nodeId) == -1) childNode.parentNodes.push(parentNode.nodeId);
+    childNode.level = parentNode.level+1;
 
-    if (orderedNodes.indexOf(nodeId) == -1) orderedNodes.push(nodeId);
-/*
-    const levelNodes = [];
-    for (const nodeId in nodes)
+    let childNodeLevel = parentNode.level+1;
+    if (childNode.subtype == "group")
     {
-        const currentNode = nodes[nodeId];
-        if (currentNode.level == node.level)
+        console.log("\t".repeat(parentNode.level),`adding ${childNode.nodeId} to ${parentNode.nodeId}`);
+        addNewGroupTo(childNode.nodeId,parentNode.nodeId);
+    }
+    else if (childNode.subtype != "group")
+    {
+        console.log("\t".repeat(parentNode.level),`adding ${childNode.nodeId} to ${parentNode.nodeId}`);
+        childNode.minimized = parentNode.minimized;
+
+        let onlyChildIsGroup = true;
+        parentNode.childrenNodes.map
+        (
+            childId =>
+            {
+                onlyChildIsGroup &= (nodes[childId].subtype == "group");
+            }
+        )
+
+        if (parentNode.subtype != "group") childNode.subtype = "subNode";
+
+        let toInherit;
+        if (onlyChildIsGroup)
         {
-            levelNodes.push(currentNode);
+            toInherit = parentNode.childrenNodes.concat([]);
+            parentNode.childrenNodes = [childNode.nodeId];
         }
+        else
+        {
+            toInherit = [parentNode.toInherit];
+            parentNode.childrenNodes.push(childNode.nodeId);
+        }
+
+        childNode.childrenNodes = toInherit;
+        toInherit.map
+        (
+            inheritId =>
+            {
+                const node = nodes[inheritId];
+
+                if (onlyChildIsGroup)
+                {
+                    const index = node.parentNodes.indexOf(parentNode.nodeId);
+                    node.parentNodes.splice(index,1);
+                }
+
+                node.parentNodes.push(childNode.nodeId);
+            }
+        );
     }
 
-    levelNodes.sort
-    (
-        (a,b) =>
-        {
-            if (a.level == b.level)
-            {
-                return 0;
-            }
+    childNode.level = childNodeLevel;
 
-            return a.level > b.level ? 1 : -1;
+    let groupInLevel = false;
+    Object.keys(nodes).map
+    (
+        nodeId =>
+        {
+            const node = nodes[nodeId];
+            if (node.level == childNodeLevel && node.subtype == "group") groupInLevel = true;
         }
     )
-
-    levelNodes.shift(node);
-    balanceLevel(levelNodes);*/
-
-    if (setInherit)
+    if (groupInLevel)
     {
-        parentNode["toInherit"] = nodeId;
-    }
-    if (inherit && parentNode.toInherit)
-    {
-        const inheritNode = nodes[parentNode.toInherit];
-        const inheritIndex = parentNode["childrenNodes"].indexOf(parentNode["toInherit"]);
-
-        const oldParentIndex = inheritNode.parentNodes.indexOf(parentNodeId);
-        if (oldParentIndex != -1)
-        {
-            inheritNode.parentNodes.splice(oldParentIndex,1);
-        }
-
-        node.childrenNodes.push(parentNode.toInherit);
-        inheritNode.parentNodes.push(nodeId);
-
-        if (inheritIndex != -1)
-        {
-            parentNode["childrenNodes"].splice(inheritIndex,1);
-        }
-
-        if (inheritNode.level == node.level)
-        {
-            traverse
-            (
-                inheritNode.nodeId,
-                null,null,
-                (traverseNode) =>
-                {
-                    traverseNode["level"] += 1;
-                }
-            );
-        }
+        shiftNodes(childNode.level-1,1,childNode.nodeId);
     }
 }
 
-const addNode = (nodeName,nodeType,nodeDetails) =>
+const addNode = (nodeName,nodeType,nodeSubtype,nodeDetails) =>
 {
     if (!nodeTypes.includes(nodeType))
     {
@@ -152,6 +160,7 @@ const addNode = (nodeName,nodeType,nodeDetails) =>
         "expanded":false,
         "toInherit":null,
         "type":nodeType,
+        "subtype":nodeSubtype,
     };
 
     for (let key in nodeDetails)
@@ -174,25 +183,25 @@ const addNewGroupTo = (nodeId,parentNodeId) =>
     node.toInherit = parentNode.toInherit;
     parentNode.toInherit = node.nodeId;
     let nodeLevel = (parentNode.level+1);
+    let allChildren = parentNode.childrenNodes;
 
     if (parentNode.childrenNodes.length > 0)
     {
-        nodeLevel += (parentNode.childrenNodes.length > 0);
-        parentNode.childrenNodes.map
-        (
-            childrenNodeId =>
-            {
-                const childNode = nodes[childrenNodeId];
-                childNode.childrenNodes.push(node.nodeId);
-
-                const index = childNode.childrenNodes.indexOf(node.toInherit);
-                if (node.toInherit && index != -1)
+        let containsGroup = false;
+        while (allChildren.length > 0 && !containsGroup)
+        {
+            let nextChildren = [];
+            allChildren.map
+            (
+                childNodeId =>
                 {
-                    childNode.childrenNodes.splice(index,1);
-                    node.parentNodes.push(childrenNodeId);
+                    const childNode = nodes[childNodeId];
+                    if (childNode.level > nodeLevel) nodeLevel = childNode.level;
+                    if (childNode.childrenNodes.length > 0) nextChildren = nextChildren.concat(childNode.childrenNodes);
+                    containsGroup |= (childNode.subtype == "group");
                 }
-            }
-        );
+            );
+        }
     }
     else
     {
@@ -243,38 +252,95 @@ const removeSubNodeFrom = (nodeId,nodeName) =>
     delete(node["subNodes"][nodeName]);
     generateSubNodeDisplay();
 }
-const addNewNodeTo = (parentId,nodeName,type,nodeDetails) =>
-{
-    const node = addNode(nodeName,type,nodeDetails);
-    const isGroup = type == "group";
-    const parentNode = nodes[parentId];
 
-    if (isGroup && parentNode.type != "me")
-    {
-        addNewGroupTo(node,parentId);
-    }
-    else
-    {
-        addChild(node,parentId,!isGroup,isGroup);
-    }
+const addNewNodeTo = (parentId,nodeName,nodeType,nodeSubtype,nodeDetails,isVariant=false) =>
+{
+    const parentNode = nodes[parentId];
+    const nodeId = addNode(nodeName,nodeType == "inherit" ? parentNode.type : nodeType,nodeSubtype,nodeDetails);
+    const isGroup = nodeType == "group";
+    addChild(nodeId,parentId,isVariant);
 
     render(false);
-    return node;
+    return nodeId;
 }
 
-const shiftNodes = (level,shift) =>
+const shiftNodes = (level,shift,skipNodeId=null) =>
 {
     orderedNodes.map
     (
         nodeId =>
         {
+			if (nodeId == skipNodeId) return;
             const childNode = nodes[nodeId];
             childNode.level += childNode.level > level ? shift : 0;
         }
     )
 }
 
-const removeChildren = (nodeId) =>
+const shiftNodeTree = (nodesToShift=[],shift=1,skipShift=null) =>
+{
+    while (nodesToShift.length > 0)
+    {
+        let containsGroup = false;
+        nodesToShift.map
+        (
+            toShift =>
+            {
+                const nodeToShift = nodes[toShift];
+                containsGroup |= nodeToShift.subtype == "group";
+            }
+        );
+        if (containsGroup) break;
+
+        let nextNodes = [];
+        nodesToShift.map
+        (
+            toShift =>
+            {
+                const nodeToShift = nodes[toShift];
+                nextNodes.concat(nodeToShift.childrenNodes);
+                nodeToShift.level += shift;
+            }
+        );
+        nodesToShift = nextNodes;
+    }
+}
+
+const removeTree = (rootNodeId) =>
+{
+    const toRemove = obtainPaths
+    (
+        [[rootNodeId]],
+        nodeId =>
+        {
+            return nodes[nodeId].subtype != "group"
+        }
+    );
+
+    const uniqueNodes = [];
+    toRemove.map
+    (
+        path =>
+        {
+            path.map(
+                nodeId =>
+                {
+                    if (uniqueNodes.indexOf(nodeId) == -1) uniqueNodes.push(nodeId);
+                }
+            );
+        }
+    );
+
+    uniqueNodes.map
+    (
+        nodeId =>
+        {
+            removeNode(nodeId);
+        }
+    )
+}
+
+const removeChildren = (allNodes) =>
 {
     const node = nodes[nodeId];
     const toRemove = node.childrenNodes.concat([]);
@@ -283,7 +349,7 @@ const removeChildren = (nodeId) =>
         childNodeId =>
         {
             const childNode = nodes[childNodeId];
-            if (childNode.type != "group") removeNode(childNodeId);
+            if (childNode.subtype != "group") removeNode(childNodeId);
         }
     );
 }
@@ -291,71 +357,75 @@ const removeChildren = (nodeId) =>
 const removeNode = (nodeId) =>
 {
     const node = nodes[nodeId];
+    console.log(nodeId);
 
-    if (node.type == "group")
+    if (node.subtype == "group")
     {
-        removeChildren(nodeId);
-
-        Object.keys(nodes).map
+        node.parentNodes.map
         (
-            _nodeId =>
+            parentNodeId =>
             {
-                const _node = nodes[_nodeId];
-                if (_node.toInherit == nodeId)
+                const parentNode = nodes[parentNodeId];
+                const nodeIndex = parentNode.childrenNodes.indexOf(nodeId);
+                parentNode.childrenNodes.splice(nodeIndex,1);
+                if (node.toInherit) parentNode.childrenNodes.push(node.toInherit);
+            }
+        )
+
+        node.childrenNodes.map
+        (
+            childNodeId =>
+            {
+                const childNode = nodes[childNodeId];
+                const nodeIndex = childNode.parentNodes.indexOf(nodeId);
+                childNode.parentNodes.splice(nodeIndex,1);
+            }
+        )
+    }
+    else
+    {
+        const parentNodeId = node.parentNodes[0];
+        const parentNode = nodes[parentNodeId];
+        const nodeIndex = parentNode.childrenNodes.indexOf(nodeId);
+        parentNode.childrenNodes.splice(nodeIndex,1);
+        if (parentNode.childrenNodes.length == 0)
+        {
+            parentNode.childrenNodes.push(parentNode.toInherit);// = parentNode.childrenNodes.concat(node.childrenNodes);
+        }
+
+        node.childrenNodes.map
+        (
+            childNodeId =>
+            {
+                const childNode = nodes[childNodeId];
+                const nodeIndex = childNode.parentNodes.indexOf(nodeId);
+                childNode.parentNodes.splice(nodeIndex,1);
+                if (childNode.parentNodes.length == 0 && childNode.parentNodes.indexOf(parentNodeId) == -1)
                 {
-                    _node.toInherit = node.toInherit;
+                    childNode.parentNodes.push(parentNodeId);
+                    if (parentNode.childrenNodes.indexOf(childNodeId) == -1) parentNode.childrenNodes.push(childNodeId);
+                    console.log(childNodeId,parentNodeId,childNode.parentNodes);
                 }
             }
         )
     }
 
-    let onlyChild = true;
-    node.parentNodes.map
+    let levelEmpty = true;
+    Object.keys(nodes).map
     (
-        parentNodeId =>
+        _nodeId =>
         {
-            const parentNode = nodes[parentNodeId];
-            const nodeIndex = parentNode.childrenNodes.indexOf(nodeId);
-            parentNode.childrenNodes.splice(nodeIndex,1);
-
-            if (parentNode.childrenNodes.length == 0)
-            {
-                if (node.childrenNodes.length > 0)
-                {
-                    parentNode.childrenNodes = node.childrenNodes.concat([]);
-                }
-                else if (parentNode.toInherit)
-                {
-                    parentNode.childrenNodes.push(parentNode.toInherit);
-                }
-                else
-                {
-                    parentNode.childrenNodes = [];
-                }
-            }
-            else
-            {
-                onlyChild = false;
-            }
+            const _node = nodes[_nodeId];
+            if (_nodeId != nodeId && _node.level == node.level) levelEmpty = false;
         }
     )
-    if (onlyChild) shiftNodes(node.level,-1);
 
-    node.childrenNodes.map
-    (
-        childNodeId =>
-        {
-            const childNode = nodes[childNodeId];
-            const index = childNode.parentNodes.indexOf(nodeId);
-
-            if (index != -1) childNode.parentNodes.splice(index,1);
-
-            if (childNode.parentNodes.length == 0)
-            {
-                childNode.parentNodes = node.parentNodes;
-            }
-        }
-    );
+    console.log("is level empty",node.level);
+    if (levelEmpty)
+    {
+        console.log("level empty");
+        shiftNodes(node.level-1,-1);
+    }
 
     delete(nodes[nodeId]);
     const index = orderedNodes.indexOf(nodeId);
@@ -587,7 +657,7 @@ const compareChildNodes = (nodeId) =>
     const finances = [];
     const node = nodes[nodeId];
 
-    if (node.childrenNodes.length == 1 && nodes[node.childrenNodes[0]].type == "group")
+    if (node.childrenNodes.length == 1 && nodes[node.childrenNodes[0]].subtype == "group")
     {
         flashNode(nodeId);
         return toast("Please add at least one node");
@@ -635,7 +705,7 @@ const collapseChildNodes = (nodeId) =>
         (childNodeId) =>
         {
             childSelected |= nodes[childNodeId].selected;
-            isOnlyChildAGroup &= nodes[childNodeId].type == "group";
+            isOnlyChildAGroup &= nodes[childNodeId].subtype == "group";
             if (nodes[childNodeId].selected) childIdSelected = childNodeId;
         }
     );
@@ -708,9 +778,9 @@ const reverseTraverse = (nodeId,traversedNodes,showGraph=true,fastTraverse=false
     traversedNodes.push(nodeId);
     if
     (
-        node.type == "group" && 
+        node.subtype == "group" && 
         (
-            (node.childrenNodes.length == 1 && nodes[node.childrenNodes[0]].type == "group") || 
+            (node.childrenNodes.length == 1 && nodes[node.childrenNodes[0]].subtype == "group") || 
             node.childrenNodes.length == 0
         )
     )
@@ -763,15 +833,10 @@ const reverseTraverse = (nodeId,traversedNodes,showGraph=true,fastTraverse=false
 
 const startForwardTraverse = (nodeId) =>
 {
-    const node = nodes[nodeId];
-    if ( node.type != "me" ) return;
-
-    const forwardTraverseNodes = [[nodeId]];
-    forwardTraverse(nodeId,forwardTraverseNodes);
-    const allOptions = joinForwardTraverse(forwardTraverseNodes);
+    let options = obtainPaths([[nodeId]]);
     const allFinances = [];
     let count = 0;
-    allOptions.map
+    options.map
     (
         (option,i) =>
         {
@@ -780,52 +845,59 @@ const startForwardTraverse = (nodeId) =>
         }
     );
     currentScenario = allFinances;
+    console.log(allFinances);
     renderGraph(allFinances);
 }
 
-const forwardTraverse = (nodeId,traversedNodes,currentLevel=0) =>
+const obtainPaths = (startingNodes,isValid=null) =>
 {
-    const node = nodes[nodeId];
-    if (traversedNodes.length <= currentLevel+1) {traversedNodes.push([])}
+    let options = startingNodes;
+    let traverse;
+    do
+    {
+        traverse = forwardTraverse(options,isValid);
+        options = traverse.result; 
+    }
+    while (traverse.continue)
 
-    node.childrenNodes.map
+    return options;
+}
+
+const forwardTraverse = (currentOptions,isValid=null) =>
+{
+    isValid = isValid == null ? (nodeId)=>{return true} : isValid;
+    const nextOptions = [];
+    let shouldContinue = true;
+    currentOptions.map
     (
-        (childNode) =>
+        option =>
         {
-            if (traversedNodes[currentLevel+1].indexOf(childNode) == -1)
-            {
-                traversedNodes[currentLevel+1].push(childNode);
-            }
+            const latestNodeId = option[option.length-1];
+            const node = nodes[latestNodeId];
+
+            node.childrenNodes.map
+            (
+                childNodeId =>
+                {
+                    if (shouldContinue && isValid(childNodeId))
+                    {
+                        nextOptions.push(option.concat([childNodeId]));
+                    }
+                    else
+                    {
+                        shouldContinue = false;
+                    }
+                }
+            )
         }
     )
 
-    traversedNodes[currentLevel+1].map
-    (
-        nodeId => forwardTraverse(nodeId,traversedNodes,currentLevel+1)
-    );
-}
-
-const joinForwardTraverse = (forwardTraverse) =>
-{
-    let currentLevel = [forwardTraverse[0]];
-    for (let i = 1; i < forwardTraverse.length-1; i++)
+    if (shouldContinue && nextOptions.length > 0)
     {
-        currentLevel = joinNextLevel(currentLevel,forwardTraverse[i]);
+        return {"continue":shouldContinue,"result":nextOptions}
     }
-    return currentLevel;
-}
-
-const joinNextLevel = (traverse,nextLevel) =>
-{
-    const allJoins = [];
-    for (const j in nextLevel)
+    else
     {
-        for (const i in traverse)
-        {
-            const option = traverse[i].slice();
-            option.push(nextLevel[j]);
-            allJoins.push(option);
-        }
+        return {"continue":false,"result":currentOptions}
     }
-    return allJoins.length > 0 ? allJoins : traverse;
 }
