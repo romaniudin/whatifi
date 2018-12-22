@@ -95,11 +95,12 @@ const _nodeOverlayDetails = (node) =>
 
     const div = d3.select("#node-overlay").append("div");
 
-    div.append("h5").text(`Modify: ${node.type == "subnode" ? node.subNodeName : node.nodeName}`);
+    div.append("h5").text(`Modify: ${node.subtype == "subnode" ? node.subNodeName : node.nodeName}`);
 
-    generateOverlayInput(div,"Node Name","details-node-name-input","text",node.type == "subnode" ? node.subNodeName : node.nodeName);
+    const nodeType = node.subtype;
 
-    const nodeType = node.type;
+    generateOverlayInput(div,nodeType == "group" ? "Decision Name" : "Event Name","details-node-name-input","text",node.subtype == "subnode" ? node.subNodeName : node.nodeName);
+
     const value = node.finance ? node.finance.value || null : null;
     const frequency = node.finance ? node.finance.frequency || null : null;
     const start = node.finance ? node.finance.start || 0 : 0;
@@ -142,7 +143,7 @@ const _nodeOverlayDetails = (node) =>
 
                 if (verifyNodeDetails(nodeName,nodeValue,nodeFrequency,nodeStart,nodeEnd))
                 {
-                    const name = node.type == "subnode" ? "subNodeName" : "nodeName";
+                    const name = node.subtype == "subnode" ? "subNodeName" : "nodeName";
                     const details =
                     {
                         "finance":
@@ -155,7 +156,7 @@ const _nodeOverlayDetails = (node) =>
                     };
                     details[name] = nodeName;
 
-                    if (node.type == "subnode")
+                    if (node.subtype == "subnode")
                     {
                         updateSubNodeDetails(node.nodeId,node.subNodeId,details);
                     }
@@ -196,7 +197,7 @@ const nodeOverlayAdd = (nodeId,type,isVariant=false) =>
 
     div.append("h5").text(`Add to: ${node.nodeName}`);
 
-    generateOverlayInput(div,"Node Name","add-node-name-input","text",null);
+    generateOverlayInput(div,isGroup ? "Decision Name" : "Event Name","add-node-name-input","text",null);
     if (!isGroup)
     {
         generateOverlayInput(div,"Value","add-node-value-input","number",null);

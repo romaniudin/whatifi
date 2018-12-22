@@ -6,6 +6,7 @@ const nodes = {};
 const orderedNodes = [];
 const nodeTypes =
 [
+    "whatifi",
     "me",
     "person",
     "expense",
@@ -92,7 +93,7 @@ const inheritNodes = (childNode,parentNode,isVariant=false) =>
         }
         else
         {
-            toInherit = [parentNode.toInherit];
+            toInherit = parentNode.toInherit ? [parentNode.toInherit] : [];
             parentNode.childrenNodes.push(childNode.nodeId);
         }
 
@@ -103,6 +104,7 @@ const inheritNodes = (childNode,parentNode,isVariant=false) =>
             {
                 const node = nodes[inheritId];
 
+                console.log(node,inheritId,toInherit,childNode);
                 if (onlyChildIsGroup)
                 {
                     const index = node.parentNodes.indexOf(parentNode.nodeId);
@@ -208,7 +210,6 @@ const addNewGroupTo = (nodeId,parentNodeId) =>
         parentNode.childrenNodes.push(nodeId);
     }
 
-    shiftNodes(nodeLevel-1,1);
     node.level = nodeLevel;
 
     if (node.toInherit)

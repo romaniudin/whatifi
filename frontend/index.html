@@ -66,8 +66,10 @@
         <script>
             render();
             renderScenario();
-            const me = addNode("Me","me","me");
-            const job = addNewNodeTo(me,"Job","income","group",{});
+            const whatifi = addNode("WhatIfI","whatifi","whatifi");
+            const me = addNewNodeTo(whatifi,"Me","person","group",{});
+            const spouse = addNewNodeTo(me,"Spouse","person","group",{});
+/*
             const childcare = addNewNodeTo(job,"Child care","expense","group",{});
 
             const j1 = addNewNodeTo(job,"Job1","income","subnode",{"finance":{"value":10000,"frequency":1,"start":"2018-11"}},true);
@@ -89,6 +91,7 @@
             const job6 = addNode("6Job","income","subnode",{"finance":{"value":10000,"frequency":1,"start":"2018-11"}});
             addChild(job5,j3,true);
             addChild(job6,j3,true);
+*/
             render(false)
         </script>
     </body>

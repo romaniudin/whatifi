@@ -189,6 +189,7 @@ const balanceLevel = (allNodes) =>
 
 	let currentPlacement = 0;
 	let isSubNode = false;
+    console.log("balancing",allNodes);
     allNodes.map
     (
         (node,i) =>
@@ -197,7 +198,7 @@ const balanceLevel = (allNodes) =>
 
 			if (node.subtype != "subNode")
 			{
-				const nodeOffset = (childrenCount % 2 == 1) ? parseInt(childrenCount/2)*nodeDistance : (childrenCount-1)/2*nodeDistance;
+				const nodeOffset = childrenCount > 0 ? ((childrenCount % 2 == 1) ? parseInt(childrenCount/2)*nodeDistance : (childrenCount-1)/2*nodeDistance) : 0;
 
 				currentPlacement += nodeOffset;
 				node.x = levelLength == 1 ? 0 : currentPlacement;
@@ -223,7 +224,7 @@ const balanceLevel = (allNodes) =>
 			{
 				if (node.subtype != "subNode")
 				{
-					node.x -= (levelLength)*nodeDistance/2;
+					node.x -= (levelLength-1)*nodeDistance/2;
 				}
 			}
 		)
@@ -301,17 +302,21 @@ const removeAllLinkTraverse = () =>
 
 const updateNodeSelected = (nodeId,selected) =>
 {
-    const selectLevel = nodes[nodeId].level;
-    if (balancedNodes.length > 0)
+    const node = nodes[nodeId];
+    if (node.childrenNodes.length == 1)
     {
-        balancedNodes[selectLevel].map
+        const selectParent = node.childrenNodes[0];
+        Object.keys(nodes).map
         (
-            (node) =>
+            _nodeId =>
             {
-                if (node.nodeId != nodeId)
+                const _node = nodes[_nodeId];
+                console.log("parent",selectParent,_nodeId);
+                if (_nodeId != nodeId && _node.childrenNodes.length == 1 && _node.childrenNodes[0] == selectParent)
                 {
-                    node.selected = false
-                    renderNodeSelection(node.nodeId,false);
+                console.log(">>>>>",selectParent,_nodeId);
+                    _node.selected = false;
+                    renderNodeSelection(_nodeId,_node.selected);
                 }
             }
         )

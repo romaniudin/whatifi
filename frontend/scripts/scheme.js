@@ -5,6 +5,7 @@ const whatifiGray = "darkslategrey";
 
 const borderScheme =
 {
+    "whatifi":whatifiOrange,
     "me":whatifiOrange,
     "group":whatifiOrange,
     "default":whatifiBlue,
@@ -12,6 +13,7 @@ const borderScheme =
 
 const imageBorderScheme =
 {
+    "whatifi":whatifiBlue,
     "me":whatifiBlue,
     "group":whatifiOrange,
     "default":whatifiBlue,
